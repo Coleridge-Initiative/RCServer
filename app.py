@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from pathlib import Path
 from flasgger import Swagger
 from flask import Flask, g, jsonify, make_response, redirect, render_template, request
 from flask_caching import Cache
 from http import HTTPStatus
+from richcontext import server as rc_server
 import json
 import sys
+import time
 
 
 ######################################################################
@@ -16,6 +19,12 @@ APP = Flask(__name__, static_folder="static", template_folder="templates")
 APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
+
+NET = rc_server.RCNetwork()
+NET.parse_corpus()
+
+NET.build_analytics_graph()
+NET.scale_ranks()
 
 
 @APP.route("/")
@@ -37,9 +46,9 @@ API_TEMPLATE = {
             "title": "demo Flask + Swagger for a microservice",
             "description": "demo Flask + Swagger for a microservice",
             "contact": {
-                "responsibleOrganization": "NYU Coleridge Initiative",
+                "responsibleOrganization": "Coleridge Initiative",
                 "name": "API Support",
-                "url": "https://coleridgeinitiative.org/connecting"
+                "url": "https://coleridgeinitiative.org/richcontext"
             },
             "termsOfService": "https://coleridgeinitiative.org/computing"
         },
@@ -58,25 +67,37 @@ SWAGGER = Swagger(APP, template=API_TEMPLATE)
 ######################################################################
 ## API routes
 
-@APP.route("/api/v1/info")
-def api_get_info ():
+@APP.route("/api/v1/query/<query>", methods=["GET"])
+def api_query (query):
     """
     get API info
     ---
     tags:
       - info
     description: 'get info about this API'
+    parameters:
+      - name: query
+        in: path
+        required: true
+        type: string
+        description: some stuff
     produces:
       - application/json
     responses:
       '200':
         description: info about this API
     """
+    global NET
 
-    return jsonify({
-        "neighborhood": "Mr. Rogers",
-        "status": "beautiful day",
-    })
+    print("|{}|".format(query))
+
+    t0 = time.time()
+    limit = 2
+
+    subgraph = NET.get_subgraph(search_term=query, limit=limit)
+    hood = NET.extract_neighborhood(subgraph, query)
+
+    return hood.serialize(t0)
 
 
 @CACHE.cached(timeout=3000)

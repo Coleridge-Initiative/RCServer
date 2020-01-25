@@ -1,5 +1,6 @@
 # Configuration, log files, reports, and other state
 
+tmp.jsonld
 flask.cfg
 rc.cfg
 nohup.out
