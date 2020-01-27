@@ -1,0 +1,162 @@
+{
+    "@context": {
+        "@language": "en",
+        "@vocab": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#",
+        "cito": "http://purl.org/spar/cito/",
+        "dct": "http://purl.org/dc/terms/",
+        "foaf": "http://xmlns.com/foaf/0.1/",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#"
+    },
+    "@graph": [
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#provider-19eb7b3b445e1a00d385",
+            "@type": "Provider",
+            "dct:title": {
+                "@value": "IRI"
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#dataset-cb23c2370049f4960a3a",
+            "@type": "Dataset",
+            "dct:alternative": {
+                "@value": "retail scanner data"
+            },
+            "dct:publisher": {
+                "@value": "provider-19eb7b3b445e1a00d385"
+            },
+            "dct:title": {
+                "@value": "IRI Infoscan"
+            },
+            "foaf:page": {
+                "@type": "xsd:anyURI",
+                "@value": "https://www.iriworldwide.com/en-US/Solutions/Retail"
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#publication-710993be04f336ea1734",
+            "@type": "ResearchPublication",
+            "cito:citesAsDataSource": {
+                "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#dataset-cb23c2370049f4960a3a"
+            },
+            "dct:creator": [
+                {
+                    "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-af651efbbb2aa7a9ba46"
+                },
+                {
+                    "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-5f84a613de107e8ecc91"
+                },
+                {
+                    "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-aed11b564b664cfbfc09"
+                },
+                {
+                    "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-519a2756ec94640f5bb5"
+                },
+                {
+                    "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-27ef9a58cf561d2bd503"
+                },
+                {
+                    "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-7839d337578bf8eba042"
+                }
+            ],
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://doi.org/10.1177/1090198119831759"
+            },
+            "dct:publisher": {
+                "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#journal-6605a72d6c2596042a6a"
+            },
+            "dct:title": {
+                "@value": "Tobacco Marketing at SNAP- and WIC-Authorized Retail Food Stores in the United States"
+            },
+            "foaf:page": {
+                "@type": "xsd:anyURI",
+                "@value": "https://doi.org/10.1177/1090198119831759"
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#journal-6605a72d6c2596042a6a",
+            "@type": "Journal",
+            "dct:alternative": [
+                {
+                    "@value": "Health Education & Behavior"
+                },
+                {
+                    "@value": "Health Education and Behavior"
+                },
+                {
+                    "@value": "Health education & behavior : the official publication of the Society for Public Health Education"
+                }
+            ],
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://portal.issn.org/resource/ISSN/1090-1981"
+            },
+            "dct:title": {
+                "@value": "Health Educ Behav"
+            },
+            "foaf:page": {
+                "@type": "xsd:anyURI",
+                "@value": "https://journals.sagepub.com/home/heb"
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-af651efbbb2aa7a9ba46",
+            "@type": "Author",
+            "dct:title": {
+                "@value": "Queen, Tara L."
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-5f84a613de107e8ecc91",
+            "@type": "Author",
+            "dct:title": {
+                "@value": "Myers, Allison E."
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-aed11b564b664cfbfc09",
+            "@type": "Author",
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://orcid.org/0000-0002-3836-0269"
+            },
+            "dct:title": {
+                "@value": "Laska, Melissa Nelson"
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-519a2756ec94640f5bb5",
+            "@type": "Author",
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://orcid.org/0000-0001-6939-9310"
+            },
+            "dct:title": {
+                "@value": "Rust, Shauna M."
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-27ef9a58cf561d2bd503",
+            "@type": "Author",
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://orcid.org/0000-0002-7271-0832"
+            },
+            "dct:title": {
+                "@value": "D'Angelo, Heather"
+            }
+        },
+        {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-7839d337578bf8eba042",
+            "@type": "Author",
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://orcid.org/0000-0003-3318-8524"
+            },
+            "dct:title": {
+                "@value": "Ribisl, Kurt M."
+            }
+        }
+    ]
+}

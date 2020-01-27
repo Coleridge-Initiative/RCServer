@@ -20,11 +20,9 @@ APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
 
-NET = rc_server.RCNetwork()
-NET.parse_corpus()
-
-NET.build_analytics_graph()
-NET.scale_ranks()
+t0 = time.time()
+NET = rc_server.RCNetwork.load_network(Path("min_kg.jsonld"))
+NET_TIME = (time.time() - t0) * 1000.0
 
 
 @APP.route("/")
@@ -139,6 +137,8 @@ def api_post_stuff ():
 ## main
 
 def main ():
+    print("{:.2f} ms KG parse time".format(NET_TIME))
+
     PORT = 5000
     APP.run(host="0.0.0.0", port=PORT, debug=True)
 

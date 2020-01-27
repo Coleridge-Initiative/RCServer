@@ -71,7 +71,7 @@ class RCNetwork:
         return id, kind, title, elem
 
 
-    def parse_corpus (self, path=Path("tmp.jsonld")):
+    def parse_corpus (self, path):
         """
         parse each of the entities within the KG
         """
@@ -340,12 +340,26 @@ class RCNetwork:
         return hood
 
 
+    @classmethod
+    def load_network (cls, path):
+        """
+        full usage pattern
+        """
+        net = RCNetwork()
+        net.parse_corpus(path)
+
+        net.build_analytics_graph()
+        net.scale_ranks()
+
+        return net
+
+
 ######################################################################
 
 def main ():
     # build a graph from the JSON-LD corpus
     net = RCNetwork()
-    net.parse_corpus()
+    net.parse_corpus(Path("tmp.jsonld"))
 
     # rank and scale each entity
     net.build_analytics_graph()
