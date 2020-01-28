@@ -69,8 +69,8 @@ SWAGGER = Swagger(APP, template=API_TEMPLATE)
 ######################################################################
 ## API routes
 
-@APP.route("/api/v1/query/<query>", methods=["GET", "POST"])
-def api_query (query):
+@APP.route("/api/v1/query/<radius>/<query>", methods=["GET"])
+def api_query (radius, query):
     """
     get API info
     ---
@@ -78,25 +78,28 @@ def api_query (query):
       - info
     description: 'get info about this API'
     parameters:
+      - name: radius
+        in: path
+        required: true
+        type: integer
+        description: radius for BFS neighborhood
       - name: query
         in: path
         required: true
         type: string
-        description: some stuff
+        description: entity name to search
     produces:
       - application/json
     responses:
       '200':
-        description: info about this API
+        description: neighborhood search within the knowledge graph
     """
     global NET
 
-    print("|{}|".format(query))
+    print("|{}| {}".format(query, radius))
 
     t0 = time.time()
-    limit = 2
-
-    subgraph = NET.get_subgraph(search_term=query, limit=limit)
+    subgraph = NET.get_subgraph(search_term=query, radius=int(radius))
     hood = NET.extract_neighborhood(subgraph, query)
 
     return hood.serialize(t0)

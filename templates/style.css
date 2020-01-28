@@ -1,0 +1,18 @@
+html, body {
+	min-height: 100%;
+}
+
+body {
+	background-color: coral;
+}
+
+#content {
+	min-height: 100%;
+	height: auto !important; /*min-height hack*/
+	height: 100%;            /*min-height hack*/
+	margin-bottom: -4em;     /*negates #push on longer pages*/
+}
+
+#footer {
+	height: 4em;
+}

@@ -274,7 +274,7 @@ class RCNetwork:
             self.scale[id] = [int(round(scale)), impact / 100.0]
 
 
-    def get_subgraph (self, search_term, limit):
+    def get_subgraph (self, search_term, radius):
         """
         use BFS to label nodes as part of a 'neighborhood' subgraph
         """
@@ -282,7 +282,7 @@ class RCNetwork:
 
         for node_id, label in self.labels.items():
             if label == search_term:
-                r = nx.bfs_edges(self.nxg, source=node_id, depth_limit=limit)
+                r = nx.bfs_edges(self.nxg, source=node_id, depth_limit=radius)
                 subgraph = set([node_id])
 
                 for _, neighbor in r:
@@ -369,9 +369,9 @@ def main ():
     t0 = time.time()
 
     search_term = "IRI Infoscan"
-    limit = 2
+    radius = 2
 
-    subgraph = net.get_subgraph(search_term=search_term, limit=limit)
+    subgraph = net.get_subgraph(search_term=search_term, radius=radius)
     hood = net.extract_neighborhood(subgraph, search_term)
 
     print(hood.serialize(t0))
