@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html
+ lang="en"
+>
+<head>
+ <meta charset="utf-8">
+ <meta
+  name="viewport"
+  content="width=device-width, initial-scale=1"
+ >
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
+ <meta
+  name="keywords"
+  content="rich context, evidence-based policymaking, knowledge graph, automated data inventory"
+ >
+ <link
+  rel="stylesheet"
+  href="https://unpkg.com/purecss@1.0.1/build/pure-min.css"
+  integrity="sha384-oAOxQR6DkCoMliIh8yFnu25d7Eq/PHS21PClpwjOTeU2jRSq11vu66rf90/cZr47"
+  crossorigin="anonymous"
+ >
+ <!--[if lte IE 8]>
+   <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/grids-responsive-old-ie-min.css">
+ <![endif]-->
+ <!--[if gt IE 8]><!-->
+   <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/grids-responsive-min.css">
+ <!--<![endif]-->
+
+ <title>Rich Context</title>
+</head>
+<body
+ style="background-color: coral;"
+>
+<div id="layout">
+ <div class="pure-g">
+  <div class="pure-u-1">
+
+<form id="search">
+dataset:
+<input type="text" name="entity" value="IRI Infoscan"/>
+<input type="button" onclick="run_search()" value="search">
+</form>
+
+  </div>
+ </div>
+
+</div>
+
+<script>
+function run_search() {
+  var entity = document.forms.search.entity.value;
+  console.log(entity);
+
+  var url = "/api/v1/query/".concat(encodeURI(entity));
+  console.log(url);
+
+  var xhr = new XMLHttpRequest();
+  xhr.responseType = "json";
+  xhr.open("GET", url);
+  xhr.send()
+
+  xhr.onload = function() {
+    if (xhr.status != 200) { // analyze HTTP status of the response
+      alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+    } else { // show the result
+      var obj = xhr.response;
+      console.log(obj);
+    }
+  };
+
+  xhr.onerror = function() {
+    alert("Request failed");
+  };
+}
+</script>
+
+</body>
+</html>

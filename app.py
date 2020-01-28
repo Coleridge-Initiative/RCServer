@@ -25,9 +25,13 @@ NET = rc_server.RCNetwork.load_network(Path("min_kg.jsonld"))
 NET_TIME = (time.time() - t0) * 1000.0
 
 
+######################################################################
+## page routes
+
 @APP.route("/")
 def home_page ():
-    return "hello"
+    return render_template("index.html")
+
 
 @APP.route("/index.html")
 @APP.route("/home/")
@@ -65,7 +69,7 @@ SWAGGER = Swagger(APP, template=API_TEMPLATE)
 ######################################################################
 ## API routes
 
-@APP.route("/api/v1/query/<query>", methods=["GET"])
+@APP.route("/api/v1/query/<query>", methods=["GET", "POST"])
 def api_query (query):
     """
     get API info
