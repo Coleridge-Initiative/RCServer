@@ -1,18 +1,17 @@
 <!DOCTYPE html>
-<html
- lang="en"
->
+<html lang="en">
 <head>
+ <title>Rich Context</title>
  <meta charset="utf-8">
  <meta
   name="viewport"
   content="width=device-width, initial-scale=1"
  >
- <meta http-equiv="X-UA-Compatible" content="IE=edge">
  <meta
   name="keywords"
   content="rich context, evidence-based policymaking, knowledge graph, automated data inventory"
  >
+ <meta http-equiv="X-UA-Compatible" content="IE=edge">
  <link
   rel="stylesheet"
   href="https://unpkg.com/purecss@1.0.1/build/pure-min.css"
@@ -25,25 +24,93 @@
  <!--[if gt IE 8]><!-->
    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/grids-responsive-min.css">
  <!--<![endif]-->
-
- <title>Rich Context</title>
+ <style>
+html, body {
+  min-height: 100%;
+}
+#content {
+  min-height: 100%;
+  height: auto !important; /*min-height hack*/
+  height: 100%;            /*min-height hack*/
+  margin-bottom: -4em;     /*negates #push on longer pages*/
+}
+#footer {
+  height: 4em;
+}
+ </style>
 </head>
 <body
  style="background-color: coral;"
 >
-<div id="layout">
- <div class="pure-g">
-  <div class="pure-u-1">
+<div id="content">
+<div class="pure-g">
 
-<form id="search">
-dataset:
-<input type="text" name="entity" value="IRI Infoscan"/>
-<input type="button" onclick="run_search()" value="search">
+  <div class="pure-u-1 pure-u-md-1-4">
+<div
+ style="background-color: red; padding: 1em;"
+>
+<h3>Providers:</h3>
+<p>
+US Dept of Foo
+</p>
+</div>
+<div
+ style="background-color: red; padding: 1em;"
+>
+<h3>Journals:</h3>
+<p>
+J Gene Obsti Foo
+</p>
+</div>
+<div
+ style="background-color: red; padding: 1em;"
+>
+<h3>Publications:</h3>
+<p>
+"Will metasyntactic variables literally just can't even, like ever?"
+</p>
+</div>
+<div
+ style="background-color: red; padding: 1em;"
+>
+<h3>Authors:</h3>
+<p>
+Mathison, Franny
+</p>
+<p>
+Everdeen, Katniss
+</p>
+<p>
+Finch, Jean Louise
+</p>
+</div>
+  </div>
+
+  <div class="pure-u-1 pure-u-md-3-4">
+<form
+ id="search"
+ class="pure-form"
+ style="padding-left: 1em;"
+>
+<fieldset>
+<label for="entity">dataset</label>
+<input type="text" name="entity" value="IRI Infoscan" style="width: 20em;"/>
+<button type="submit" class="pure-button pure-button-primary" onclick="run_search()">search</button>
+</fieldset>
 </form>
 
+<p
+ style="background-color: blue; padding: 1em; min-height: 30em;"
+>placeholder</p>
   </div>
- </div>
 
+<div id="footer" class="pure-u-1">
+<footer>
+  Place your footer information here.
+</footer>
+</div>
+
+</div>
 </div>
 
 <script>
@@ -60,16 +127,16 @@ function run_search() {
   xhr.send()
 
   xhr.onload = function() {
-    if (xhr.status != 200) { // analyze HTTP status of the response
+    if (xhr.status != 200) {
       alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
-    } else { // show the result
+    } else { // use the result
       var obj = xhr.response;
       console.log(obj);
     }
   };
 
   xhr.onerror = function() {
-    alert("Request failed");
+    alert("API request failed");
   };
 }
 </script>
