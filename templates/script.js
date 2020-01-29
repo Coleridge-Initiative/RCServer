@@ -1,14 +1,36 @@
 function get_links (entity) {
-    console.log(entity);
+    var url = `/api/v1/links/${entity}`;
+    console.log(url);
+
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("GET", url);
+    xhr.send();
+
+    xhr.onload = function() {
+	if (xhr.status != 200) {
+	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+	} else { // use the result
+	    var obj = xhr.response;
+	    console.log(obj);
+
+	    var view = document.getElementById("view_links");
+	    view.innerHTML = obj;
+	}
+    };
+
+    xhr.onerror = function() {
+	alert("API request failed");
+    };
 };
 
 
-function enum_entity (entity_list, inspect_name) {
-    var inspect = document.getElementById(inspect_name);
+function enum_entity (entity_list, neighbor_name) {
+    var neighbor = document.getElementById(neighbor_name);
     var ul_elem = document.createElement("ul");
 
-    inspect.innerHTML = "";
-    inspect.appendChild(ul_elem);
+    neighbor.innerHTML = "";
+    neighbor.appendChild(ul_elem);
 
     for (i = 0; i < entity_list.length; i++) { 
 	var entity = entity_list[i][0];
@@ -40,11 +62,11 @@ function run_query () {
 	    var obj = xhr.response;
 	    console.log(obj);
 
-	    enum_entity(obj.auth, "inspect-authors");
-	    enum_entity(obj.pubs, "inspect-publications");
-	    enum_entity(obj.jour, "inspect-journals");
-	    enum_entity(obj.data, "inspect-datasets");
-	    enum_entity(obj.prov, "inspect-providers");
+	    enum_entity(obj.auth, "neighbor-authors");
+	    enum_entity(obj.pubs, "neighbor-publications");
+	    enum_entity(obj.jour, "neighbor-journals");
+	    enum_entity(obj.data, "neighbor-datasets");
+	    enum_entity(obj.prov, "neighbor-providers");
 	}
     };
 
@@ -52,3 +74,21 @@ function run_query () {
 	alert("API request failed");
     };
 };
+
+
+function open_view (view_name) {
+    var tabcontent = document.getElementsByClassName("tabcontent");
+
+    for (i = 0; i < tabcontent.length; i++) {
+	tabcontent[i].style.display = "none";
+    }
+
+    document.getElementById(view_name).style.display = "block";
+};
+
+
+// the following runs as soon as the page loads...
+
+(function () {
+    open_view("view_links");
+})();

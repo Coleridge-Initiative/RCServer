@@ -24,6 +24,9 @@ class RCNeighbors:
 
 
     def serialize (self, t0):
+        """
+        serialize this subgraph/neighborhood as JSON
+        """
         view = {
             "prov": sorted(self.prov, reverse=True),
             "data": sorted(self.data, reverse=True),
@@ -32,6 +35,7 @@ class RCNeighbors:
             "jour": sorted(self.jour, reverse=True),
             "time": "{:.2f}".format((time.time() - t0) * 1000.0)
             }
+
         return json.dumps(view, indent=4, sort_keys=True, ensure_ascii=False)
 
 
@@ -340,18 +344,18 @@ class RCNetwork:
         return hood
 
 
-    @classmethod
-    def load_network (cls, path):
+    def load_network (self, path):
         """
-        full usage pattern
+        full usage pattern, prior to subgraph
         """
-        net = RCNetwork()
-        net.parse_corpus(path)
+        t0 = time.time()
 
-        net.build_analytics_graph()
-        net.scale_ranks()
+        self.parse_corpus(path)
+        self.build_analytics_graph()
+        self.scale_ranks()
 
-        return net
+        elapsed_time = (time.time() - t0) * 1000.0
+        return elapsed_time
 
 
 ######################################################################

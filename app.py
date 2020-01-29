@@ -24,7 +24,7 @@ APP = Flask(__name__, static_folder="static", template_folder="templates")
 APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
-NET = None
+NET = rc_server.RCNetwork()
 
 
 ######################################################################
@@ -47,8 +47,8 @@ def home_redirects ():
 API_TEMPLATE = {
         "swagger": "2.0",
         "info": {
-            "title": "demo Flask + Swagger for a microservice",
-            "description": "demo Flask + Swagger for a microservice",
+            "title": "Rich Context",
+            "description": "OpenAPI for Rich Context microservices",
             "contact": {
                 "responsibleOrganization": "Coleridge Initiative",
                 "name": "API Support",
@@ -60,7 +60,7 @@ API_TEMPLATE = {
         "schemes": ["http"],
         "externalDocs": {
             "description": "Documentation",
-            "url": "https://coleridgeinitiative.org/richcontext"
+            "url": "https://github.com/Coleridge-Initiative/rclc/wiki"
         }
     }
 
@@ -71,21 +71,22 @@ SWAGGER = Swagger(APP, template=API_TEMPLATE)
 ######################################################################
 ## API routes
 
-@APP.route("/api/v1/query/<radius>/<query>", methods=["GET"])
-def api_query (radius, query):
+@CACHE.cached(timeout=3000)
+@APP.route("/api/v1/query/<radius>/<entity>", methods=["GET"])
+def api_entity_query (radius, entity):
     """
-    get API info
+    query a subgraph for an entity
     ---
     tags:
-      - info
-    description: 'get info about this API'
+      - knowledge_graph
+    description: 'query with a radius near an entity, using BFS'
     parameters:
       - name: radius
         in: path
         required: true
         type: integer
         description: radius for BFS neighborhood
-      - name: query
+      - name: entity
         in: path
         required: true
         type: string
@@ -98,13 +99,44 @@ def api_query (radius, query):
     """
     global NET
 
-    print("|{}| {}".format(query, radius))
-
     t0 = time.time()
-    subgraph = NET.get_subgraph(search_term=query, radius=int(radius))
-    hood = NET.extract_neighborhood(subgraph, query)
+    subgraph = NET.get_subgraph(search_term=entity, radius=int(radius))
+    hood = NET.extract_neighborhood(subgraph, entity)
 
     return hood.serialize(t0)
+
+
+@CACHE.cached(timeout=3000)
+@APP.route("/api/v1/links/<index>", methods=["GET"])
+def api_entity_links (index):
+    """
+    lookup the links for an entity
+    ---
+    tags:
+      - knowledge_graph
+    description: 'lookup the links for an entity'
+    parameters:
+      - name: index
+        in: path
+        required: true
+        type: integer
+        description: index of entity to lookup
+    produces:
+      - application/json
+    responses:
+      '200':
+        description: links for an entity within the knowledge graph
+    """
+    global NET
+
+    id = int(index)
+
+    if id >= 0 and id < len(NET.id_list):
+        result = NET.id_list[id]
+    else:
+        result = None
+
+    return jsonify(result)
 
 
 @CACHE.cached(timeout=3000)
@@ -114,7 +146,7 @@ def api_post_stuff ():
     post some stuff
     ---
     tags:
-      - uri
+      - example
     description: 'post some stuff'
     parameters:
       - name: mcguffin
@@ -148,9 +180,8 @@ def api_post_stuff ():
 def main (args):
     global NET
 
-    t0 = time.time()
-    NET = rc_server.RCNetwork.load_network(Path(args.corpus))
-    print("{:.2f} ms KG parse time".format((time.time() - t0) * 1000.0))
+    elapsed_time = NET.load_network(Path(args.corpus))
+    print("{:.2f} ms corpus parse time".format(elapsed_time))
 
     APP.run(host="0.0.0.0", port=args.port, debug=True)
 
