@@ -303,7 +303,7 @@ class RCNetwork:
         
                 if p_id in subgraph:
                     scale, impact = self.scale[p_id]
-                    hood.prov.append([ "{:.4f}".format(impact), p["title"], p["ror"] ])
+                    hood.prov.append([ p_id, "{:.4f}".format(impact), p["title"], p["ror"] ])
 
         for d in self.datasets.values():
             if "used" in d:
@@ -312,7 +312,7 @@ class RCNetwork:
                 if d_id in subgraph and not d["title"] == search_term:
                     p_id = self.get_id(d["provider"])
                     scale, impact = self.scale[d_id]
-                    hood.data.append([ "{:.4f}".format(impact), d["title"], self.labels[p_id] ])
+                    hood.data.append([ d_id, "{:.4f}".format(impact), d["title"], self.labels[p_id] ])
 
         for a in self.authors.values():
             if "used" in a:
@@ -320,7 +320,7 @@ class RCNetwork:
 
                 if a_id in subgraph:
                     scale, impact = self.scale[a_id]
-                    hood.auth.append([ "{:.4f}".format(impact), a["title"], a["orcid"] ])
+                    hood.auth.append([ a_id, "{:.4f}".format(impact), a["title"], a["orcid"] ])
 
         for j in self.journals.values():
             if "used" in j:
@@ -328,14 +328,14 @@ class RCNetwork:
 
                 if j_id in subgraph and not j["title"] == "unknown":
                     scale, impact = self.scale[j_id]
-                    hood.jour.append([ "{:.4f}".format(impact), j["title"], j["issn"] ])
+                    hood.jour.append([ j_id, "{:.4f}".format(impact), j["title"], j["issn"] ])
 
         for p in self.publications.values():
             p_id = self.get_id(p["id"])
 
             if p_id in subgraph:
                 scale, impact = self.scale[p_id]
-                hood.pubs.append([ "{:.4f}".format(impact), p["title"], p["doi"] ])
+                hood.pubs.append([ p_id, "{:.4f}".format(impact), p["title"], p["doi"] ])
 
         return hood
 

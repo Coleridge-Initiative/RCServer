@@ -12,12 +12,9 @@ add mechanism for people to add what they see is missing
 
 need a web token
 
-
  * give us 5 datasets
  * list of publications which are related
  * post to their community
 
 
 can we address the needs for Data Maturity Assessment?
-
-are there any particular open data licensing approaches we want to use?

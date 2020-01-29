@@ -7,9 +7,14 @@ from flask import Flask, g, jsonify, make_response, redirect, render_template, r
 from flask_caching import Cache
 from http import HTTPStatus
 from richcontext import server as rc_server
+import argparse
 import json
 import sys
 import time
+
+
+DEFAULT_PORT = 5000
+DEFAULT_CORPUS = "min_kg.jsonld"
 
 
 ######################################################################
@@ -19,10 +24,7 @@ APP = Flask(__name__, static_folder="static", template_folder="templates")
 APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
-
-t0 = time.time()
-NET = rc_server.RCNetwork.load_network(Path("min_kg.jsonld"))
-NET_TIME = (time.time() - t0) * 1000.0
+NET = None
 
 
 ######################################################################
@@ -143,12 +145,34 @@ def api_post_stuff ():
 ######################################################################
 ## main
 
-def main ():
-    print("{:.2f} ms KG parse time".format(NET_TIME))
+def main (args):
+    global NET
 
-    PORT = 5000
-    APP.run(host="0.0.0.0", port=PORT, debug=True)
+    t0 = time.time()
+    NET = rc_server.RCNetwork.load_network(Path(args.corpus))
+    print("{:.2f} ms KG parse time".format((time.time() - t0) * 1000.0))
+
+    APP.run(host="0.0.0.0", port=args.port, debug=True)
 
 
 if __name__ == "__main__":
-    main()
+    # parse the command line arguments, if any
+    parser = argparse.ArgumentParser(
+        description="Rich Context: server, API, UI"
+        )
+
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help="web IP port"
+        )
+
+    parser.add_argument(
+        "--corpus",
+        type=str,
+        default=DEFAULT_CORPUS,
+        help="corpus file"
+        )
+
+    main(parser.parse_args())
