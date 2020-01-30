@@ -1,5 +1,35 @@
-function get_links (entity) {
-    var url = `/api/v1/links/${entity}`;
+var catch_token = "";
+
+
+function fetch_graph () {
+    var url = `/api/v1/graph/${cache_token}`;
+    console.log(url);
+
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("GET", url);
+    xhr.send();
+
+    xhr.onload = function() {
+	if (xhr.status != 200) {
+	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+	} else { // use the result
+	    var obj = xhr.response;
+	    console.log(obj);
+
+	    var view = document.getElementById("view_graph");
+	    view.innerHTML = obj;
+	}
+    };
+
+    xhr.onerror = function() {
+	alert("API request failed");
+    };
+};
+
+
+function get_links (index) {
+    var url = `/api/v1/links/${index}`;
     console.log(url);
 
     var xhr = new XMLHttpRequest();
@@ -62,11 +92,15 @@ function run_query () {
 	    var obj = xhr.response;
 	    console.log(obj);
 
+	    cache_token = obj.toke;
+
 	    enum_entity(obj.auth, "neighbor-authors");
 	    enum_entity(obj.pubs, "neighbor-publications");
 	    enum_entity(obj.jour, "neighbor-journals");
 	    enum_entity(obj.data, "neighbor-datasets");
 	    enum_entity(obj.prov, "neighbor-providers");
+
+	    fetch_graph();
 	}
     };
 

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from pathlib import Path
 from flasgger import Swagger
 from flask import Flask, g, jsonify, make_response, redirect, render_template, request
 from flask_caching import Cache
 from http import HTTPStatus
+from pathlib import Path
 from richcontext import server as rc_server
 import argparse
+import diskcache as dc
+import hashlib
 import json
+import string
 import sys
 import time
 
@@ -26,6 +29,8 @@ APP.config.from_pyfile("flask.cfg")
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
 NET = rc_server.RCNetwork()
 
+DC_CACHE = dc.Cache("/tmp/richcontext")
+
 
 ######################################################################
 ## page routes
@@ -39,6 +44,26 @@ def home_page ():
 @APP.route("/home/")
 def home_redirects ():
     return redirect(url_for("home_page"))
+
+
+######################################################################
+## utilities
+
+def get_hash (strings, prefix=None, digest_size=10):
+    """
+    construct a unique identifier from a collection of strings
+    """
+    m = hashlib.blake2b(digest_size=digest_size)
+    
+    for elem in sorted(map(lambda x: x.encode("utf-8").lower().strip(), strings)):
+        m.update(elem)
+
+    if prefix:
+        id = prefix + m.hexdigest()
+    else:
+        id = m.hexdigest()
+
+    return "".join(filter(lambda x: x in string.printable, id))
 
 
 ######################################################################
@@ -97,13 +122,16 @@ def api_entity_query (radius, entity):
       '200':
         description: neighborhood search within the knowledge graph
     """
-    global NET
+    global NET, DC_CACHE
 
     t0 = time.time()
     subgraph = NET.get_subgraph(search_term=entity, radius=int(radius))
     hood = NET.extract_neighborhood(subgraph, entity)
 
-    return hood.serialize(t0)
+    cache_token = get_hash([ entity, radius ], prefix="graph-")
+    DC_CACHE[cache_token] = "<b>Hi there Fred</b>"
+
+    return hood.serialize(t0, cache_token)
 
 
 @CACHE.cached(timeout=3000)
@@ -127,9 +155,12 @@ def api_entity_links (index):
       '200':
         description: links for an entity within the knowledge graph
     """
-    global NET
+    global NET, DC_CACHE
 
-    id = int(index)
+    try:
+        id = int(index)
+    except:
+        id = -1
 
     if id >= 0 and id < len(NET.id_list):
         result = NET.id_list[id]
@@ -137,6 +168,32 @@ def api_entity_links (index):
         result = None
 
     return jsonify(result)
+
+
+@CACHE.cached(timeout=3000)
+@APP.route("/api/v1/graph/<cache_token>", methods=["GET"])
+def api_fetch_graph (cache_token):
+    """
+    fetch a cached network diagram 
+    ---
+    tags:
+      - knowledge_graph
+    description: 'fetch a cached network diagram '
+    parameters:
+      - name: cache_token
+        in: path
+        required: true
+        type: string
+        description: cache token for fetch
+    produces:
+      - application/json
+    responses:
+      '200':
+        description: HTML to render a network diagram
+    """
+    global NET, DC_CACHE
+
+    return jsonify(DC_CACHE[cache_token])
 
 
 @CACHE.cached(timeout=3000)

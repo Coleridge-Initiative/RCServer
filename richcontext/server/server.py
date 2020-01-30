@@ -23,7 +23,7 @@ class RCNeighbors:
         self.pubs = []
 
 
-    def serialize (self, t0):
+    def serialize (self, t0, cache_token):
         """
         serialize this subgraph/neighborhood as JSON
         """
@@ -33,6 +33,7 @@ class RCNeighbors:
             "pubs": sorted(self.pubs, reverse=True),
             "auth": sorted(self.auth, reverse=True),
             "jour": sorted(self.jour, reverse=True),
+            "toke": cache_token,
             "time": "{:.2f}".format((time.time() - t0) * 1000.0)
             }
 
