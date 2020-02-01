@@ -3,12 +3,14 @@
 
 from operator import itemgetter
 from pathlib import Path
+from pyvis.network import Network
 from scipy.stats import percentileofscore
 import codecs
 import json
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 import sys
 import time
 import traceback
@@ -279,6 +281,20 @@ class RCNetwork:
             self.scale[id] = [int(round(scale)), impact / 100.0]
 
 
+    def load_network (self, path):
+        """
+        full usage pattern, prior to subgraph
+        """
+        t0 = time.time()
+
+        self.parse_corpus(path)
+        self.build_analytics_graph()
+        self.scale_ranks()
+
+        elapsed_time = (time.time() - t0) * 1000.0
+        return elapsed_time
+
+
     def get_subgraph (self, search_term, radius):
         """
         use BFS to label nodes as part of a 'neighborhood' subgraph
@@ -298,9 +314,12 @@ class RCNetwork:
 
     def extract_neighborhood (self, subgraph, search_term):
         """
-        extract the neighbor entities from the subgraph
+        extract the neighbor entities from the subgraph, while
+        generating a network diagram
         """
         hood = RCNeighbors()
+        g = Network(notebook=False, height="450px", width="100%")
+        g.force_atlas_2based()
 
         for p in self.providers.values():
             if "used" in p:
@@ -310,14 +329,23 @@ class RCNetwork:
                     scale, impact = self.scale[p_id]
                     hood.prov.append([ p_id, "{:.4f}".format(impact), p["title"], p["ror"] ])
 
+                    title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["ror"])
+                    g.add_node(p_id, label=p["title"], title=title, color="orange", size=scale)
+
         for d in self.datasets.values():
             if "used" in d:
                 d_id = self.get_id(d["id"])
         
-                if d_id in subgraph and not d["title"] == search_term:
+                if d_id in subgraph:
                     p_id = self.get_id(d["provider"])
                     scale, impact = self.scale[d_id]
                     hood.data.append([ d_id, "{:.4f}".format(impact), d["title"], self.labels[p_id] ])
+
+                    title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d["title"], impact, self.labels[p_id])
+                    g.add_node(d_id, label=d["title"], title=title, color="red", size=scale)
+
+                    if p_id in subgraph:
+                        g.add_edge(d_id, p_id, color="gray")
 
         for a in self.authors.values():
             if "used" in a:
@@ -327,6 +355,9 @@ class RCNetwork:
                     scale, impact = self.scale[a_id]
                     hood.auth.append([ a_id, "{:.4f}".format(impact), a["title"], a["orcid"] ])
 
+                    title = "{}<br/>rank: {:.4f}<br/>{}".format(a["title"], impact, a["orcid"])
+                    g.add_node(a_id, label=a["title"], title=title, color="purple", size=scale)
+
         for j in self.journals.values():
             if "used" in j:
                 j_id = self.get_id(j["id"])
@@ -335,6 +366,9 @@ class RCNetwork:
                     scale, impact = self.scale[j_id]
                     hood.jour.append([ j_id, "{:.4f}".format(impact), j["title"], j["issn"] ])
 
+                    title = "{}<br/>rank: {:.4f}<br/>{}".format(j["title"], impact, j["issn"])
+                    g.add_node(j_id, label=j["title"], title=title, color="green", size=scale)
+
         for p in self.publications.values():
             p_id = self.get_id(p["id"])
 
@@ -342,21 +376,32 @@ class RCNetwork:
                 scale, impact = self.scale[p_id]
                 hood.pubs.append([ p_id, "{:.4f}".format(impact), p["title"], p["doi"] ])
 
-        return hood
+                title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["doi"])
+                g.add_node(p_id, label=p["title"], title=title, color="blue", size=scale)
 
+                if p["journal"]:
+                    j_id = self.get_id(p["journal"])
 
-    def load_network (self, path):
-        """
-        full usage pattern, prior to subgraph
-        """
-        t0 = time.time()
+                    if j_id in subgraph:
+                        g.add_edge(p_id, j_id, color="gray")
 
-        self.parse_corpus(path)
-        self.build_analytics_graph()
-        self.scale_ranks()
+                for d in p["datasets"]:
+                    d_id = self.get_id(d)
+            
+                    if d_id in subgraph:
+                        g.add_edge(p_id, d_id, color="gray")
 
-        elapsed_time = (time.time() - t0) * 1000.0
-        return elapsed_time
+                for a in p["authors"]:
+                    a_id = self.get_id(a)
+            
+                    if a_id in subgraph:
+                        g.add_edge(p_id, a_id, color="gray")
+
+        filename = "corpus.html"
+        g.show_buttons()
+        g.show(filename)
+
+        return hood, filename
 
 
 ######################################################################
@@ -377,7 +422,7 @@ def main ():
     radius = 2
 
     subgraph = net.get_subgraph(search_term=search_term, radius=radius)
-    hood = net.extract_neighborhood(subgraph, search_term)
+    hood, filename = net.extract_neighborhood(subgraph, search_term)
 
     print(hood.serialize(t0))
 

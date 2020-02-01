@@ -1,9 +1,8 @@
-var catch_token = "";
+var cache_token = "";
 
 
 function fetch_graph () {
     var url = `/api/v1/graph/${cache_token}`;
-    console.log(url);
 
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";
@@ -13,12 +12,16 @@ function fetch_graph () {
     xhr.onload = function() {
 	if (xhr.status != 200) {
 	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
-	} else { // use the result
+	} else {
 	    var obj = xhr.response;
-	    console.log(obj);
 
-	    var view = document.getElementById("view_graph");
-	    view.innerHTML = obj;
+	    var g = document.createElement("script");
+	    var s = document.getElementsByTagName("script")[0];
+	    g.text = obj.js;
+	    s.parentNode.insertBefore(g, s);
+
+	    var view = document.getElementById("view_graph_script");
+	    view.appendChild(s);
 	}
     };
 
@@ -30,7 +33,6 @@ function fetch_graph () {
 
 function get_links (index) {
     var url = `/api/v1/links/${index}`;
-    console.log(url);
 
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";
@@ -90,7 +92,6 @@ function run_query () {
 	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
 	} else { // use the result
 	    var obj = xhr.response;
-	    console.log(obj);
 
 	    cache_token = obj.toke;
 
@@ -124,5 +125,5 @@ function open_view (view_name) {
 // the following runs as soon as the page loads...
 
 (function () {
-    open_view("view_links");
+    open_view("view_graph");
 })();

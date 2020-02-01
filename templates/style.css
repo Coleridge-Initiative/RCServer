@@ -21,6 +21,14 @@ body {
 	overflow-y: auto;
 }
 
+.neighbor h3 {
+	font-size: 1em;
+	padding-top: 0;
+	padding-bottom: 0;
+	margin-block-start: 0;
+	margin-block-end: 0;
+}
+
 .neighbor div {
 	max-height: 9em;
 	min-height: 1em;
@@ -83,4 +91,22 @@ a:active {
 	background-color: transparent;
 	text-decoration: underline;
 	font-weight: bold;
+}
+
+/* vis.js style definitions */
+
+#mynetwork {
+	width: 100%;
+	height: 450px;
+	background-color: #ffffff;
+	/* border: 1px solid lightgray; */
+	position: relative;
+	float: left;
+}
+
+#config {
+	display: none;
+	float: left;
+	width: 4px;
+	height: 6px;
 }

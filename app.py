@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from bs4 import BeautifulSoup
 from flasgger import Swagger
-from flask import Flask, g, jsonify, make_response, redirect, render_template, request
+from flask import Flask, g, jsonify, make_response, redirect, render_template, render_template_string, request
 from flask_caching import Cache
 from http import HTTPStatus
 from pathlib import Path
@@ -126,12 +127,46 @@ def api_entity_query (radius, entity):
 
     t0 = time.time()
     subgraph = NET.get_subgraph(search_term=entity, radius=int(radius))
-    hood = NET.extract_neighborhood(subgraph, entity)
+    hood, filename = NET.extract_neighborhood(subgraph, entity)
 
-    cache_token = get_hash([ entity, radius ], prefix="graph-")
-    DC_CACHE[cache_token] = "<b>Hi there Fred</b>"
+    cache_token = get_hash([ entity, radius ], prefix="hood-")
 
+    with open("corpus.html", "r") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
+        node = soup.find("body").find("script")
+        DC_CACHE[cache_token] = node.text
+    
     return hood.serialize(t0, cache_token)
+
+
+@CACHE.cached(timeout=3000)
+@APP.route("/api/v1/graph/<cache_token>", methods=["GET"])
+def fetch_graph (cache_token):
+    """
+    fetch a cached network diagram 
+    ---
+    tags:
+      - knowledge_graph
+    description: 'get the JavaScript to render a graph'
+    parameters:
+      - name: cache_token
+        in: path
+        required: true
+        type: string
+        description: token to use for disk cache access
+    produces:
+      - application/json
+    responses:
+      '200':
+        description: JavaScript to render a graph
+    """
+    global NET, DC_CACHE
+
+    view = {
+        "js": DC_CACHE[cache_token]
+        }
+
+    return jsonify(view)
 
 
 @CACHE.cached(timeout=3000)
@@ -168,32 +203,6 @@ def api_entity_links (index):
         result = None
 
     return jsonify(result)
-
-
-@CACHE.cached(timeout=3000)
-@APP.route("/api/v1/graph/<cache_token>", methods=["GET"])
-def api_fetch_graph (cache_token):
-    """
-    fetch a cached network diagram 
-    ---
-    tags:
-      - knowledge_graph
-    description: 'fetch a cached network diagram '
-    parameters:
-      - name: cache_token
-        in: path
-        required: true
-        type: string
-        description: cache token for fetch
-    produces:
-      - application/json
-    responses:
-      '200':
-        description: HTML to render a network diagram
-    """
-    global NET, DC_CACHE
-
-    return jsonify(DC_CACHE[cache_token])
 
 
 @CACHE.cached(timeout=3000)
