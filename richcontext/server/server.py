@@ -312,7 +312,7 @@ class RCNetwork:
         return subgraph
 
 
-    def extract_neighborhood (self, subgraph, search_term):
+    def extract_neighborhood (self, subgraph, search_term, html_path):
         """
         extract the neighbor entities from the subgraph, while
         generating a network diagram
@@ -397,11 +397,11 @@ class RCNetwork:
                     if a_id in subgraph:
                         g.add_edge(p_id, a_id, color="gray")
 
-        filename = "corpus.html"
-        g.show_buttons()
-        g.show(filename)
+        #g.show_buttons()
+        #g.show(filename)
+        g.write_html(html_path, notebook=False)
 
-        return hood, filename
+        return hood
 
 
 ######################################################################
@@ -422,7 +422,7 @@ def main ():
     radius = 2
 
     subgraph = net.get_subgraph(search_term=search_term, radius=radius)
-    hood, filename = net.extract_neighborhood(subgraph, search_term)
+    hood = net.extract_neighborhood(subgraph, search_term, "corpus.html")
 
     print(hood.serialize(t0))
 

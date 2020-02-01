@@ -21,6 +21,7 @@ function fetch_graph () {
 	    s.parentNode.insertBefore(g, s);
 
 	    var view = document.getElementById("view_graph_script");
+	    view.removeChild(view.childNodes[0]);
 	    view.appendChild(s);
 	}
     };

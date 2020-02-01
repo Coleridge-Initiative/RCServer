@@ -12,8 +12,10 @@ import argparse
 import diskcache as dc
 import hashlib
 import json
+import os
 import string
 import sys
+import tempfile
 import time
 
 
@@ -126,16 +128,19 @@ def api_entity_query (radius, entity):
     global NET, DC_CACHE
 
     t0 = time.time()
-    subgraph = NET.get_subgraph(search_term=entity, radius=int(radius))
-    hood, filename = NET.extract_neighborhood(subgraph, entity)
-
+    handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
     cache_token = get_hash([ entity, radius ], prefix="hood-")
 
-    with open("corpus.html", "r") as f:
+    subgraph = NET.get_subgraph(search_term=entity, radius=int(radius))
+    hood = NET.extract_neighborhood(subgraph, entity, html_path)
+
+    with open(html_path, "r") as f:
         soup = BeautifulSoup(f.read(), "html.parser")
         node = soup.find("body").find("script")
         DC_CACHE[cache_token] = node.text
     
+    os.remove(html_path)
+
     return hood.serialize(t0, cache_token)
 
 
