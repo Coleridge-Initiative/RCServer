@@ -204,6 +204,15 @@ def api_entity_links (index):
 
     if id >= 0 and id < len(NET.id_list):
         result = NET.id_list[id]
+
+        if result == "publication-710993be04f336ea1734":
+            result = """
+<a
+ href="https://derwen.ai/"
+ target="_blank"
+>AI source</a>
+"""
+
     else:
         result = None
 

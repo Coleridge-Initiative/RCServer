@@ -43,6 +43,8 @@ class RCNeighbors:
 
 
 class RCNetwork:
+    MAX_TITLE_LEN = 40
+
     def __init__ (self):
         self.id_list = []
         self.labels = {}
@@ -373,8 +375,13 @@ class RCNetwork:
             p_id = self.get_id(p["id"])
 
             if p_id in subgraph:
+                if len(p["title"]) >= self.MAX_TITLE_LEN:
+                    abbrev_title = p["title"][:self.MAX_TITLE_LEN] + "..."
+                else:
+                    abbrev_title = p["title"]
+
                 scale, impact = self.scale[p_id]
-                hood.pubs.append([ p_id, "{:.4f}".format(impact), p["title"], p["doi"] ])
+                hood.pubs.append([ p_id, "{:.4f}".format(impact), abbrev_title, p["doi"] ])
 
                 title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["doi"])
                 g.add_node(p_id, label=p["title"], title=title, color="blue", size=scale)
@@ -398,7 +405,6 @@ class RCNetwork:
                         g.add_edge(p_id, a_id, color="gray")
 
         #g.show_buttons()
-        #g.show(filename)
         g.write_html(html_path, notebook=False)
 
         return hood
