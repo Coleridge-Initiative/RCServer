@@ -35,6 +35,11 @@ body {
 	overflow-y: auto;
 }
 
+.neighbor div ul li {
+	font-size: 0.9em;
+	padding-bottom: 0.2em;
+}
+
 #query {
 	padding: 1em;
 	height: 3em;

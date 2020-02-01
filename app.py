@@ -3,7 +3,9 @@
 
 from bs4 import BeautifulSoup
 from flasgger import Swagger
-from flask import Flask, g, jsonify, make_response, redirect, render_template, render_template_string, request
+from flask import Flask, g, \
+    jsonify, make_response, redirect, render_template, render_template_string, request, \
+    safe_join, send_file, send_from_directory, session, url_for
 from flask_caching import Cache
 from http import HTTPStatus
 from pathlib import Path
@@ -30,9 +32,8 @@ APP = Flask(__name__, static_folder="static", template_folder="templates")
 APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
-NET = rc_server.RCNetwork()
-
 DC_CACHE = dc.Cache("/tmp/richcontext")
+NET = rc_server.RCNetwork()
 
 
 ######################################################################
@@ -47,6 +48,12 @@ def home_page ():
 @APP.route("/home/")
 def home_redirects ():
     return redirect(url_for("home_page"))
+
+## other well-known routes
+@APP.route("/favicon.png")
+@APP.route("/apple-touch-icon.png")
+def static_from_root ():
+    return send_from_directory(APP.static_folder, request.path[1:])
 
 
 ######################################################################

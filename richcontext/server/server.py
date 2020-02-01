@@ -43,7 +43,7 @@ class RCNeighbors:
 
 
 class RCNetwork:
-    MAX_TITLE_LEN = 40
+    MAX_TITLE_LEN = 60
 
     def __init__ (self):
         self.id_list = []
