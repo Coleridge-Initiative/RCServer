@@ -52,6 +52,12 @@ def home_page ():
 def home_redirects ():
     return redirect(url_for("home_page"))
 
+## CSS, JavaScript
+@APP.route("/css/pure-min.css")
+@APP.route("/css/grids-responsive-min.css")
+@APP.route("/css/vis.css")
+@APP.route("/js/vis-network.min.js")
+
 ## other well-known routes
 @APP.route("/favicon.png")
 @APP.route("/apple-touch-icon.png")
