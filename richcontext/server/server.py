@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from css_html_js_minify import html_minify
+from jinja2 import Environment, FileSystemLoader
 from operator import itemgetter
 from pathlib import Path
 from pyvis.network import Network
@@ -207,6 +209,9 @@ class RCNetwork:
                 self.publications[id] = view
 
 
+    ######################################################################
+    ## graph analytics
+
     def build_analytics_graph (self):
         """
         build a graph to calculate analytics
@@ -296,6 +301,121 @@ class RCNetwork:
         elapsed_time = (time.time() - t0) * 1000.0
         return elapsed_time
 
+
+    ######################################################################
+    ## linked data viewer
+
+    @classmethod
+    def get_template (cls, template_folder, template_path):
+        """
+        load a Jinja2 template
+        """
+        return Environment(loader=FileSystemLoader(template_folder)).get_template(template_path)
+
+
+    @classmethod
+    def render_template (cls, template, **kwargs):
+        return html_minify(template.render(kwargs)).replace("  ", " ").replace("> <", "><").replace(" >", ">")
+
+
+    def render_links (self, template_folder):
+        """
+        leverage the `nxg` graph to generate HTML to render links for
+        each entity in the knowledge graph
+        """
+        links = {}
+        #self.nxg = nx.Graph()
+        publ_template = self.get_template(template_folder, "links/publ.html")
+
+        for p in self.providers.values():
+            p_id = self.get_id(p["id"])
+            scale, impact = self.scale[p_id]
+            title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["ror"])
+
+            html = "<a href='" + p["ror"] + "'>" + p["title"] + "</a>"
+            print(p["id"])
+            print(html)
+
+            # follow edges to datasets
+
+        for d in self.datasets.values():
+            d_id = self.get_id(d["id"])
+            p_id = self.get_id(d["provider"])
+            scale, impact = self.scale[d_id]
+            title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d["title"], impact, self.labels[p_id])
+
+            html = d["title"]
+            print(d["id"])
+            print(html)
+
+            #g.add_edge(d_id, p_id, color="gray")
+            # follow edges to publications
+
+        for a in self.authors.values():
+            a_id = self.get_id(a["id"])
+            scale, impact = self.scale[a_id]
+            title = "{}<br/>rank: {:.4f}<br/>{}".format(a["title"], impact, a["orcid"])
+
+            html = "<a href='" + a["orcid"] + "'>" + a["title"] + "</a>"
+            print(a["id"])
+            print(html)
+
+            # follow edges to publications
+
+        for j in self.journals.values():
+            j_id = self.get_id(j["id"])
+
+            if j["title"] == "unknown":
+                continue
+
+            scale, impact = self.scale[j_id]
+            title = "{}<br/>rank: {:.4f}<br/>{}".format(j["title"], impact, j["issn"])
+
+            html = "<a href='" + j["issn"] + "'>" + j["title"] + "</a>"
+            print(j["id"])
+            print(html)
+
+            # follow edges to publications
+
+        for p in self.publications.values():
+            p_id = self.get_id(p["id"])
+            scale, impact = self.scale[p_id]
+
+            if p["journal"]:
+                j_id = self.get_id(p["journal"])
+                journal = [ j_id, self.labels[j_id] ]
+            else:
+                journal = None
+
+            auth_list = []
+
+            for a in p["authors"]:
+                a_id = self.get_id(a)
+                auth_list.append([ a_id, self.labels[a_id] ])
+
+            data_list = []
+
+            for d in p["datasets"]:
+                d_id = self.get_id(d)
+                data_list.append([ d_id, self.labels[d_id] ])
+
+            links[p["id"]] = self.render_template(
+                publ_template, 
+                uuid=p["id"],
+                title=p["title"],
+                rank="{:.4f}".format(impact),
+                doi=p["doi"].replace("https://doi.org/", ""),
+                url=p["doi"],
+                journal=journal,
+                auth_list=auth_list,
+                data_list=data_list
+                )
+
+        return links
+
+
+    ######################################################################
+    ## neighborhoods
 
     def get_subgraph (self, search_term, radius):
         """

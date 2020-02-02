@@ -11,6 +11,7 @@ from http import HTTPStatus
 from pathlib import Path
 from richcontext import server as rc_server
 import argparse
+import codecs
 import diskcache as dc
 import hashlib
 import json
@@ -33,7 +34,9 @@ APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
 DC_CACHE = dc.Cache("/tmp/richcontext")
+
 NET = rc_server.RCNetwork()
+LINKS = {}
 
 
 ######################################################################
@@ -132,7 +135,7 @@ def api_entity_query (radius, entity):
       '200':
         description: neighborhood search within the knowledge graph
     """
-    global NET, DC_CACHE
+    global DC_CACHE, NET
 
     t0 = time.time()
     handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
@@ -172,7 +175,7 @@ def fetch_graph (cache_token):
       '200':
         description: JavaScript to render a graph
     """
-    global NET, DC_CACHE
+    global DC_CACHE, NET
 
     view = {
         "js": DC_CACHE[cache_token]
@@ -202,28 +205,22 @@ def api_entity_links (index):
       '200':
         description: links for an entity within the knowledge graph
     """
-    global NET, DC_CACHE
+    global DC_CACHE, LINKS, NET
 
     try:
         id = int(index)
     except:
         id = -1
 
+    html = None
+
     if id >= 0 and id < len(NET.id_list):
-        result = NET.id_list[id]
+        uuid = NET.id_list[id]
 
-        if result == "publication-710993be04f336ea1734":
-            result = """
-<a
- href="https://derwen.ai/"
- target="_blank"
->AI source</a>
-"""
+        if uuid in LINKS:
+            html = LINKS[uuid]
 
-    else:
-        result = None
-
-    return jsonify(result)
+    return jsonify(html)
 
 
 @CACHE.cached(timeout=3000)
@@ -265,10 +262,14 @@ def api_post_stuff ():
 ## main
 
 def main (args):
-    global NET
+    global LINKS, NET
 
     elapsed_time = NET.load_network(Path(args.corpus))
     print("{:.2f} ms corpus parse time".format(elapsed_time))
+
+    with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
+        LINKS = NET.render_links(APP.template_folder)
+        json.dump(LINKS, f, indent=4, sort_keys=True, ensure_ascii=False)
 
     APP.run(host="0.0.0.0", port=args.port, debug=True)
 

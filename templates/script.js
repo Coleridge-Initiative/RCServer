@@ -49,6 +49,8 @@ function get_links (index) {
 
 	    var view = document.getElementById("view_links");
 	    view.innerHTML = obj;
+
+	    open_view("view_links");
 	}
     };
 
@@ -120,6 +122,16 @@ function open_view (view_name) {
     }
 
     document.getElementById(view_name).style.display = "block";
+
+    var tabs = document.getElementsByClassName("pure-menu-item");
+
+    for (i = 0; i < tabs.length; i++) {
+	tabs[i].classList.remove("pure-menu-selected");
+    }
+
+    var tab = document.getElementById("tab_".concat(view_name));
+
+    tab.classList.toggle("pure-menu-selected");
 };
 
 

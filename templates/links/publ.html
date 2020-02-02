@@ -1,0 +1,47 @@
+<h3>{{ uuid }}</h3>
+<p>
+<a
+ href="{{ url }}"
+ target="_blank"
+>{{ title }}</a>
+</p>
+
+{% if journal is not none %}   
+<p>
+<em><a
+ href="#"
+ onclick="get_links({{ journal[0] }})"
+>{{ journal[1] }}</a></em>
+</p>
+{% endif %}
+
+<ul>
+<li>
+doi:
+<strong>{{ doi }}</strong>
+</li>
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+</ul>
+
+<p>authors:</p>
+<ul>
+{% for auth in auth_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ auth[0] }})"
+>{{ auth[1] }}</a></li>
+{% endfor %}
+</ul>
+
+<p>datasets:</p>
+<ul>
+{% for data in data_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ data[0] }})"
+>{{ data[1] }}</a></li>
+{% endfor %}
+</ul>

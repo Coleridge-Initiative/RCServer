@@ -1,5 +1,6 @@
 Flask >= 1.1.1
 beautifulsoup4 >= 4.6.3
+css-html-js-minify >= 2.5.5
 diskcache >= 4.1.0
 flasgger >= 0.9.4
 networkx >= 2.3
