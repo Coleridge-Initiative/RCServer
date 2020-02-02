@@ -1,0 +1,31 @@
+<h3>{{ uuid }}</h3>
+<p>
+<a
+ href="{{ url }}"
+ target="_blank"
+>{{ title }}</a>
+</p>
+
+<p>
+<em><a
+ href="#"
+ onclick="get_links({{ provider[0] }})"
+>{{ provider[1] }}</a></em>
+</p>
+
+<ul>
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+</ul>
+
+<p>publications:</p>
+<ul>
+{% for publ in publ_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ publ[0] }})"
+>{{ publ[1] }}</a></li>
+{% endfor %}
+</ul>

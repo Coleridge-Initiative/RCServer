@@ -323,44 +323,82 @@ class RCNetwork:
         leverage the `nxg` graph to generate HTML to render links for
         each entity in the knowledge graph
         """
-        links = {}
-        #self.nxg = nx.Graph()
+        data_template = self.get_template(template_folder, "links/data.html")
+        prov_template = self.get_template(template_folder, "links/prov.html")
         publ_template = self.get_template(template_folder, "links/publ.html")
+        auth_template = self.get_template(template_folder, "links/auth.html")
+        jour_template = self.get_template(template_folder, "links/jour.html")
+
+        links = {}
+
+        # providers
 
         for p in self.providers.values():
             p_id = self.get_id(p["id"])
             scale, impact = self.scale[p_id]
-            title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["ror"])
 
-            html = "<a href='" + p["ror"] + "'>" + p["title"] + "</a>"
-            print(p["id"])
-            print(html)
+            data_list = []
+            edges = self.nxg[self.get_id(p["id"])]
 
-            # follow edges to datasets
+            for neighbor, attr in edges.items():
+                data_list.append([ neighbor, self.labels[neighbor] ])
+
+            links[p["id"]] = self.render_template(
+                prov_template, 
+                uuid=p["id"],
+                title=p["title"],
+                rank="{:.4f}".format(impact),
+                ror=p["ror"],
+                data_list=data_list
+                )
+
+        # datasets
 
         for d in self.datasets.values():
             d_id = self.get_id(d["id"])
             p_id = self.get_id(d["provider"])
             scale, impact = self.scale[d_id]
-            title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d["title"], impact, self.labels[p_id])
 
-            html = d["title"]
-            print(d["id"])
-            print(html)
+            publ_list = []
+            seen_set = set([ p_id ])
+            edges = self.nxg[self.get_id(d["id"])]
 
-            #g.add_edge(d_id, p_id, color="gray")
-            # follow edges to publications
+            for neighbor, attr in edges.items():
+                if neighbor not in seen_set:
+                    publ_list.append([ neighbor, self.labels[neighbor] ])
+
+            links[d["id"]] = self.render_template(
+                data_template, 
+                uuid=d["id"],
+                title=d["title"],
+                rank="{:.4f}".format(impact),
+                provider=(p_id, self.labels[p_id]),
+                publ_list=publ_list
+                )
+
+        # authors
 
         for a in self.authors.values():
             a_id = self.get_id(a["id"])
             scale, impact = self.scale[a_id]
-            title = "{}<br/>rank: {:.4f}<br/>{}".format(a["title"], impact, a["orcid"])
 
-            html = "<a href='" + a["orcid"] + "'>" + a["title"] + "</a>"
-            print(a["id"])
-            print(html)
+            auth_list = []
+            edges = self.nxg[self.get_id(a["id"])]
 
-            # follow edges to publications
+            for neighbor, attr in edges.items():
+                auth_list.append([ neighbor, self.labels[neighbor] ])
+
+            links[a["id"]] = self.render_template(
+                auth_template, 
+                uuid=a["id"],
+                title=a["title"],
+                rank="{:.4f}".format(impact),
+                url=a["orcid"],
+                orcid=a["orcid"].replace("https://orcid.org/", ""),
+                auth_list=auth_list
+                )
+
+        # journals
 
         for j in self.journals.values():
             j_id = self.get_id(j["id"])
@@ -371,21 +409,33 @@ class RCNetwork:
             scale, impact = self.scale[j_id]
             title = "{}<br/>rank: {:.4f}<br/>{}".format(j["title"], impact, j["issn"])
 
-            html = "<a href='" + j["issn"] + "'>" + j["title"] + "</a>"
-            print(j["id"])
-            print(html)
+            publ_list = []
+            edges = self.nxg[self.get_id(j["id"])]
 
-            # follow edges to publications
+            for neighbor, attr in edges.items():
+                publ_list.append([ neighbor, self.labels[neighbor] ])
+
+            links[j["id"]] = self.render_template(
+                jour_template, 
+                uuid=j["id"],
+                title=j["title"],
+                rank="{:.4f}".format(impact),
+                url=j["issn"],
+                issn=j["issn"].replace("https://portal.issn.org/resource/ISSN/", ""),
+                publ_list=publ_list
+                )
+
+        # publications
 
         for p in self.publications.values():
             p_id = self.get_id(p["id"])
             scale, impact = self.scale[p_id]
 
+            journal = None
+
             if p["journal"]:
                 j_id = self.get_id(p["journal"])
                 journal = [ j_id, self.labels[j_id] ]
-            else:
-                journal = None
 
             auth_list = []
 

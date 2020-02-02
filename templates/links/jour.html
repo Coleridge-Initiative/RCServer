@@ -1,0 +1,30 @@
+<h3>{{ uuid }}</h3>
+<p>
+<a
+ href="{{ url }}"
+ target="_blank"
+>{{ title }}</a>
+</p>
+
+<ul>
+{% if issn is not none %}
+<li>
+issn:
+<strong>{{ issn }}</strong>
+</li>
+{% endif %}
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+</ul>
+
+<p>publications:</p>
+<ul>
+{% for publ in publ_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ publ[0] }})"
+>{{ publ[1] }}</a></li>
+{% endfor %}
+</ul>

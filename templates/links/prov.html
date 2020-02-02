@@ -1,0 +1,30 @@
+<h3>{{ uuid }}</h3>
+<p>
+<a
+ href="https://ror.org/{{ ror }}"
+ target="_blank"
+>{{ title }}</a>
+</p>
+
+<ul>
+{% if ror is not none %}   
+<li>
+ror:
+<strong>{{ ror }}</strong>
+</li>
+{% endif %}
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+</ul>
+
+<p>datasets:</p>
+<ul>
+{% for data in data_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ data[0] }})"
+>{{ data[1] }}</a></li>
+{% endfor %}
+</ul>
