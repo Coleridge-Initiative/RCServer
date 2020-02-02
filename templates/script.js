@@ -21,9 +21,13 @@ function fetch_graph () {
 	    s.parentNode.insertBefore(g, s);
 
 	    var view = document.getElementById("view_graph_script");
-	    view.removeChild(view.childNodes[0]);
+
+	    if (view.childNodes.length > 0) {
+		view.removeChild(view.childNodes[0]);
+	    };
+
 	    view.appendChild(s);
-	}
+	};
     };
 
     xhr.onerror = function() {
@@ -45,13 +49,10 @@ function get_links (index) {
 	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
 	} else { // use the result
 	    var obj = xhr.response;
-	    console.log(obj);
-
 	    var view = document.getElementById("view_links");
 	    view.innerHTML = obj;
-
 	    open_view("view_links");
-	}
+	};
     };
 
     xhr.onerror = function() {
@@ -60,7 +61,7 @@ function get_links (index) {
 };
 
 
-function enum_entity (entity_list, neighbor_name) {
+function enum_hood (entity_list, neighbor_name) {
     var neighbor = document.getElementById(neighbor_name);
     var ul_elem = document.createElement("ul");
 
@@ -72,11 +73,14 @@ function enum_entity (entity_list, neighbor_name) {
 	var impact = entity_list[i][1];
 	var label = entity_list[i][2];
 	var title = entity_list[i][3];
+	var shown = entity_list[i][4];
 
-	var li_elem = document.createElement("li");
-	li_elem.innerHTML = `<a href="#" title="${title}" onclick="get_links(${entity})">${label}</a>`
-	ul_elem.appendChild(li_elem);
-    }
+	if (shown) {
+	    var li_elem = document.createElement("li");
+	    li_elem.innerHTML = `<a href="#" title="${title}" onclick="get_links(${entity})">${label}</a>`;
+	    ul_elem.appendChild(li_elem);
+	};
+    };
 };
 
 
@@ -95,17 +99,16 @@ function run_query () {
 	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
 	} else { // use the result
 	    var obj = xhr.response;
-
 	    cache_token = obj.toke;
 
-	    enum_entity(obj.auth, "neighbor-authors");
-	    enum_entity(obj.pubs, "neighbor-publications");
-	    enum_entity(obj.jour, "neighbor-journals");
-	    enum_entity(obj.data, "neighbor-datasets");
-	    enum_entity(obj.prov, "neighbor-providers");
+	    enum_hood(obj.auth, "neighbor-authors");
+	    enum_hood(obj.pubs, "neighbor-publications");
+	    enum_hood(obj.jour, "neighbor-journals");
+	    enum_hood(obj.data, "neighbor-datasets");
+	    enum_hood(obj.prov, "neighbor-providers");
 
 	    fetch_graph();
-	}
+	};
     };
 
     xhr.onerror = function() {
@@ -119,7 +122,7 @@ function open_view (view_name) {
 
     for (i = 0; i < tabcontent.length; i++) {
 	tabcontent[i].style.display = "none";
-    }
+    };
 
     document.getElementById(view_name).style.display = "block";
 
@@ -127,7 +130,7 @@ function open_view (view_name) {
 
     for (i = 0; i < tabs.length; i++) {
 	tabs[i].classList.remove("pure-menu-selected");
-    }
+    };
 
     var tab = document.getElementById("tab_".concat(view_name));
 

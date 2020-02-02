@@ -273,9 +273,13 @@ def main (args):
     elapsed_time = NET.load_network(Path(args.corpus))
     print("{:.2f} ms corpus parse time".format(elapsed_time))
 
+    t0 = time.time()
+
     with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
         LINKS = NET.render_links(APP.template_folder)
         json.dump(LINKS, f, indent=4, sort_keys=True, ensure_ascii=False)
+
+    print("{:.2f} ms link format time".format((time.time() - t0) * 1000.0))
 
     APP.run(host="0.0.0.0", port=args.port, debug=True)
 
@@ -297,7 +301,7 @@ if __name__ == "__main__":
         "--corpus",
         type=str,
         default=DEFAULT_CORPUS,
-        help="corpus file"
+        help="corpus file as JSON-LD"
         )
 
     main(parser.parse_args())

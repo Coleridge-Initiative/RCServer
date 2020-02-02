@@ -1,12 +1,16 @@
-<h3>{{ uuid }}</h3>
+<p><em>{{ uuid }}</em></p>
 <p>
+{% if url is not none %}
 <a
  href="{{ url }}"
  target="_blank"
 >{{ title }}</a>
+{% else %}
+<strong>{{ title }}</strong>
+{% endif %}
 </p>
 
-{% if journal is not none %}   
+{% if journal is not none %}
 <p>
 <em><a
  href="#"
@@ -17,19 +21,26 @@
 
 <ul>
 <li>
-doi:
-<strong>{{ doi }}</strong>
-</li>
-<li>
 rank:
 <strong>{{ rank }}</strong>
 </li>
+{% if doi is not none %}
+<li>
+doi:
+<strong>{{ doi }}</strong>
+</li>
+{% endif %}
 </ul>
 
 <p>authors:</p>
 <ul>
 {% for auth in auth_list %}
-<li><a
+{% if loop.first %}
+<li style="list-style:none; margin-left:-1.4em;">&starf;
+{% else %}
+<li>
+{% endif %}
+<a
  href="#"
  onclick="get_links({{ auth[0] }})"
 >{{ auth[1] }}</a></li>

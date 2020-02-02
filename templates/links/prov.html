@@ -1,22 +1,26 @@
-<h3>{{ uuid }}</h3>
+<p><em>{{ uuid }}</em></p>
 <p>
+{% if url is not none %}
 <a
- href="https://ror.org/{{ ror }}"
+ href="{{ url }}"
  target="_blank"
 >{{ title }}</a>
+{% else %}
+<strong>{{ title }}</strong>
+{% endif %}
 </p>
 
 <ul>
-{% if ror is not none %}   
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+{% if ror is not none %}
 <li>
 ror:
 <strong>{{ ror }}</strong>
 </li>
 {% endif %}
-<li>
-rank:
-<strong>{{ rank }}</strong>
-</li>
 </ul>
 
 <p>datasets:</p>

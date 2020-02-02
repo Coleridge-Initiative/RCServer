@@ -1,9 +1,13 @@
-<h3>{{ uuid }}</h3>
+<p><em>{{ uuid }}</em></p>
 <p>
+{% if url is not none %}
 <a
  href="{{ url }}"
  target="_blank"
 >{{ title }}</a>
+{% else %}
+<strong>{{ title }}</strong>
+{% endif %}
 </p>
 
 <p>

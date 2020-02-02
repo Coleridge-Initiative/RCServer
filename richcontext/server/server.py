@@ -32,11 +32,11 @@ class RCNeighbors:
         serialize this subgraph/neighborhood as JSON
         """
         view = {
-            "prov": sorted(self.prov, reverse=True),
-            "data": sorted(self.data, reverse=True),
-            "pubs": sorted(self.pubs, reverse=True),
-            "auth": sorted(self.auth, reverse=True),
-            "jour": sorted(self.jour, reverse=True),
+            "prov": sorted(self.prov, key=lambda x: x[1], reverse=True),
+            "data": sorted(self.data, key=lambda x: x[1], reverse=True),
+            "pubs": sorted(self.pubs, key=lambda x: x[1], reverse=True),
+            "auth": sorted(self.auth, key=lambda x: x[1], reverse=True),
+            "jour": sorted(self.jour, key=lambda x: x[1], reverse=True),
             "toke": cache_token,
             "time": "{:.2f}".format((time.time() - t0) * 1000.0)
             }
@@ -335,27 +335,44 @@ class RCNetwork:
 
         for p in self.providers.values():
             p_id = self.get_id(p["id"])
+
+            if not p_id in self.scale:
+                continue
+
             scale, impact = self.scale[p_id]
 
             data_list = []
             edges = self.nxg[self.get_id(p["id"])]
 
             for neighbor, attr in edges.items():
-                data_list.append([ neighbor, self.labels[neighbor] ])
+                neighbor_scale, neighbor_impact = self.scale[neighbor]
+                data_list.append([ neighbor, self.labels[neighbor], neighbor_impact ])
+
+            if len(p["ror"]) < 1:
+                ror = None
+                url = None
+            else:
+                ror = p["ror"].replace("https://ror.org/", "")
+                url = p["ror"]
 
             links[p["id"]] = self.render_template(
                 prov_template, 
                 uuid=p["id"],
                 title=p["title"],
                 rank="{:.4f}".format(impact),
-                ror=p["ror"],
-                data_list=data_list
+                url=url,
+                ror=ror,
+                data_list=sorted(data_list, key=lambda x: x[2], reverse=True)
                 )
 
         # datasets
 
         for d in self.datasets.values():
             d_id = self.get_id(d["id"])
+
+            if not d_id in self.scale:
+                continue
+
             p_id = self.get_id(d["provider"])
             scale, impact = self.scale[d_id]
 
@@ -365,37 +382,51 @@ class RCNetwork:
 
             for neighbor, attr in edges.items():
                 if neighbor not in seen_set:
-                    publ_list.append([ neighbor, self.labels[neighbor] ])
+                    neighbor_scale, neighbor_impact = self.scale[neighbor]
+                    publ_list.append([ neighbor, self.labels[neighbor], neighbor_impact ])
 
             links[d["id"]] = self.render_template(
                 data_template, 
                 uuid=d["id"],
                 title=d["title"],
                 rank="{:.4f}".format(impact),
+                url=None,
                 provider=(p_id, self.labels[p_id]),
-                publ_list=publ_list
+                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
         # authors
 
         for a in self.authors.values():
             a_id = self.get_id(a["id"])
+
+            if not a_id in self.scale:
+                continue
+
             scale, impact = self.scale[a_id]
 
-            auth_list = []
+            publ_list = []
             edges = self.nxg[self.get_id(a["id"])]
 
             for neighbor, attr in edges.items():
-                auth_list.append([ neighbor, self.labels[neighbor] ])
+                neighbor_scale, neighbor_impact = self.scale[neighbor]
+                publ_list.append([ neighbor, self.labels[neighbor], neighbor_scale ])
+
+            if len(a["orcid"]) < 1:
+                orcid = None
+                url = None
+            else:
+                orcid = a["orcid"].replace("https://orcid.org/", "")
+                url = a["orcid"]
 
             links[a["id"]] = self.render_template(
                 auth_template, 
                 uuid=a["id"],
                 title=a["title"],
                 rank="{:.4f}".format(impact),
-                url=a["orcid"],
-                orcid=a["orcid"].replace("https://orcid.org/", ""),
-                auth_list=auth_list
+                url=url,
+                orcid=orcid,
+                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
         # journals
@@ -403,62 +434,84 @@ class RCNetwork:
         for j in self.journals.values():
             j_id = self.get_id(j["id"])
 
-            if j["title"] == "unknown":
+            if not j_id in self.scale:
                 continue
 
             scale, impact = self.scale[j_id]
-            title = "{}<br/>rank: {:.4f}<br/>{}".format(j["title"], impact, j["issn"])
 
             publ_list = []
             edges = self.nxg[self.get_id(j["id"])]
 
             for neighbor, attr in edges.items():
-                publ_list.append([ neighbor, self.labels[neighbor] ])
+                neighbor_scale, neighbor_impact = self.scale[neighbor]
+                publ_list.append([ neighbor, self.labels[neighbor], neighbor_scale ])
+
+            if len(j["issn"]) < 1:
+                issn = None
+                url = None
+            else:
+                issn = j["issn"].replace("https://portal.issn.org/resource/ISSN/", "")
+                url = j["issn"]
 
             links[j["id"]] = self.render_template(
                 jour_template, 
                 uuid=j["id"],
                 title=j["title"],
                 rank="{:.4f}".format(impact),
-                url=j["issn"],
-                issn=j["issn"].replace("https://portal.issn.org/resource/ISSN/", ""),
-                publ_list=publ_list
+                url=url,
+                issn=issn,
+                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
         # publications
 
         for p in self.publications.values():
             p_id = self.get_id(p["id"])
+
+            if not p_id in self.scale:
+                continue
+
             scale, impact = self.scale[p_id]
 
             journal = None
 
             if p["journal"]:
                 j_id = self.get_id(p["journal"])
-                journal = [ j_id, self.labels[j_id] ]
+
+                if self.labels[j_id] != "unknown":
+                    journal = [ j_id, self.labels[j_id] ]
 
             auth_list = []
 
             for a in p["authors"]:
                 a_id = self.get_id(a)
+                # do not sort; preserve the author order
                 auth_list.append([ a_id, self.labels[a_id] ])
 
             data_list = []
 
             for d in p["datasets"]:
                 d_id = self.get_id(d)
-                data_list.append([ d_id, self.labels[d_id] ])
+                neighbor_scale, neighbor_impact = self.scale[d_id]
+                data_list.append([ d_id, self.labels[d_id], neighbor_scale ])
+
+            if len(p["doi"]) < 1:
+                url = None
+                doi = None
+            else:
+                url = p["doi"]
+                doi = p["doi"].replace("https://doi.org/", "")
 
             links[p["id"]] = self.render_template(
                 publ_template, 
                 uuid=p["id"],
                 title=p["title"],
                 rank="{:.4f}".format(impact),
-                doi=p["doi"].replace("https://doi.org/", ""),
-                url=p["doi"],
+                url=url,
+                doi=doi,
                 journal=journal,
                 auth_list=auth_list,
-                data_list=data_list
+                data_list=sorted(data_list, key=lambda x: x[2], reverse=True)
                 )
 
         return links
@@ -499,7 +552,7 @@ class RCNetwork:
         
                 if p_id in subgraph:
                     scale, impact = self.scale[p_id]
-                    hood.prov.append([ p_id, "{:.4f}".format(impact), p["title"], p["ror"] ])
+                    hood.prov.append([ p_id, "{:.4f}".format(impact), p["title"], p["ror"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["ror"])
                     g.add_node(p_id, label=p["title"], title=title, color="orange", size=scale)
@@ -511,7 +564,7 @@ class RCNetwork:
                 if d_id in subgraph:
                     p_id = self.get_id(d["provider"])
                     scale, impact = self.scale[d_id]
-                    hood.data.append([ d_id, "{:.4f}".format(impact), d["title"], self.labels[p_id] ])
+                    hood.data.append([ d_id, "{:.4f}".format(impact), d["title"], self.labels[p_id], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d["title"], impact, self.labels[p_id])
                     g.add_node(d_id, label=d["title"], title=title, color="red", size=scale)
@@ -525,7 +578,7 @@ class RCNetwork:
 
                 if a_id in subgraph:
                     scale, impact = self.scale[a_id]
-                    hood.auth.append([ a_id, "{:.4f}".format(impact), a["title"], a["orcid"] ])
+                    hood.auth.append([ a_id, "{:.4f}".format(impact), a["title"], a["orcid"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(a["title"], impact, a["orcid"])
                     g.add_node(a_id, label=a["title"], title=title, color="purple", size=scale)
@@ -534,9 +587,14 @@ class RCNetwork:
             if "used" in j:
                 j_id = self.get_id(j["id"])
 
-                if j_id in subgraph and not j["title"] == "unknown":
+                if j_id in subgraph:
+                    if j["title"] == "unknown":
+                        shown = False
+                    else:
+                        shown = True
+
                     scale, impact = self.scale[j_id]
-                    hood.jour.append([ j_id, "{:.4f}".format(impact), j["title"], j["issn"] ])
+                    hood.jour.append([ j_id, "{:.4f}".format(impact), j["title"], j["issn"], shown ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(j["title"], impact, j["issn"])
                     g.add_node(j_id, label=j["title"], title=title, color="green", size=scale)
@@ -551,7 +609,7 @@ class RCNetwork:
                     abbrev_title = p["title"]
 
                 scale, impact = self.scale[p_id]
-                hood.pubs.append([ p_id, "{:.4f}".format(impact), abbrev_title, p["doi"] ])
+                hood.pubs.append([ p_id, "{:.4f}".format(impact), abbrev_title, p["doi"], True ])
 
                 title = "{}<br/>rank: {:.4f}<br/>{}".format(p["title"], impact, p["doi"])
                 g.add_node(p_id, label=p["title"], title=title, color="blue", size=scale)

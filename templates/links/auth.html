@@ -1,25 +1,29 @@
-<h3>{{ uuid }}</h3>
+<p><em>{{ uuid }}</em></p>
 <p>
+{% if orcid is not none %}
 <a
  href="{{ url }}"
  target="_blank"
 >{{ title }}</a>
+{% else %}
+<strong>{{ title }}</strong>
+{% endif %}
 </p>
 
 <ul>
-{% if orcid is not none %}   
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+{% if orcid is not none %}
 <li>
 orcid:
 <strong>{{ orcid }}</strong>
 </li>
 {% endif %}
-<li>
-rank:
-<strong>{{ rank }}</strong>
-</li>
 </ul>
 
-<p>publication:</p>
+<p>publications:</p>
 <ul>
 {% for publ in publ_list %}
 <li><a

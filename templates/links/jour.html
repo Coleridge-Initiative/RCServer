@@ -1,22 +1,26 @@
-<h3>{{ uuid }}</h3>
+<p><em>{{ uuid }}</em></p>
 <p>
+{% if url is not none %}
 <a
  href="{{ url }}"
  target="_blank"
 >{{ title }}</a>
+{% else %}
+<strong>{{ title }}</strong>
+{% endif %}
 </p>
 
 <ul>
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
 {% if issn is not none %}
 <li>
 issn:
 <strong>{{ issn }}</strong>
 </li>
 {% endif %}
-<li>
-rank:
-<strong>{{ rank }}</strong>
-</li>
 </ul>
 
 <p>publications:</p>
