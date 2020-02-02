@@ -151,9 +151,11 @@ def api_entity_query (radius, entity):
     hood = NET.extract_neighborhood(subgraph, entity, html_path)
 
     with open(html_path, "r") as f:
-        soup = BeautifulSoup(f.read(), "html.parser")
-        node = soup.find("body").find("script")
-        DC_CACHE[cache_token] = node.text
+        html = f.read()
+        DC_CACHE[cache_token] = html
+        #soup = BeautifulSoup(html, "html.parser")
+        #node = soup.find("body").find("script")
+        #DC_CACHE[cache_token] = node.text
     
     os.remove(html_path)
 
@@ -211,7 +213,7 @@ def api_entity_links (index):
       '200':
         description: links for an entity within the knowledge graph
     """
-    global DC_CACHE, LINKS, NET
+    global LINKS, NET
 
     try:
         id = int(index)
@@ -262,6 +264,22 @@ def api_post_stuff ():
     status = HTTPStatus.OK.value
 
     return jsonify(response), status
+
+
+@CACHE.cached(timeout=3000)
+@APP.route("/graph/<cache_token>", methods=["GET"])
+def fetch_graph_html (cache_token):
+    """
+    fetch the HTML to render a cached network diagram 
+    """
+    global DC_CACHE
+
+    if cache_token in DC_CACHE:
+        html = DC_CACHE[cache_token]
+    else:
+        html = f"<strong>NOT FOUND: {cache_token}</strong>"
+
+    return render_template_string(html)
 
 
 ######################################################################

@@ -1,6 +1,14 @@
 var cache_token = "";
 
 
+function fetch_graph_html () {
+    var url = `/graph/${cache_token}`;
+    var view = document.getElementById("view_graph");
+    var html = `<iframe name="frame" src="${url}" frameborder="0" scrolling="no"></iframe>`;
+    view.innerHTML = html;
+};
+
+
 function fetch_graph () {
     var url = `/api/v1/graph/${cache_token}`;
 
@@ -92,6 +100,8 @@ function run_query () {
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";
     xhr.open("GET", url);
+
+    document.body.style.cursor = "wait";
     xhr.send();
 
     xhr.onload = function() {
@@ -107,13 +117,17 @@ function run_query () {
 	    enum_hood(obj.data, "neighbor-datasets");
 	    enum_hood(obj.prov, "neighbor-providers");
 
-	    fetch_graph();
+	    //fetch_graph();
+	    fetch_graph_html();
+	    document.body.style.cursor = "default";
 	};
     };
 
     xhr.onerror = function() {
 	alert("API request failed");
     };
+
+    return true;
 };
 
 

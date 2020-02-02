@@ -77,6 +77,13 @@ body {
 	padding-bottom: 0.4em;
 }
 
+#view_graph iframe {
+	padding: 0;
+	height: 100%;
+	width: 100%;
+	border: none;
+}
+
 #footer {
 	text-align: center;
 	padding: .5em;
