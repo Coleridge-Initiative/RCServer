@@ -42,15 +42,23 @@ LINKS = {}
 ######################################################################
 ## page routes
 
-@APP.route("/")
-def home_page ():
-    return render_template("index.html")
-
-
 @APP.route("/index.html")
 @APP.route("/home/")
 def home_redirects ():
     return redirect(url_for("home_page"))
+
+@APP.route("/")
+def home_page ():
+    query = request.args.to_dict()
+    
+    if "entity" in query:
+        query["entity"] = query["entity"].strip()
+
+        if len(query["entity"]) < 1:
+            del query["entity"]
+
+    return render_template("index.html", query=query)
+
 
 ## CSS, JavaScript
 @APP.route("/css/pure-min.css")

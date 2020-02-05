@@ -95,6 +95,12 @@ function enum_hood (entity_list, neighbor_name) {
 function run_query () {
     var radius = document.forms.query.radius.value;
     var entity = document.forms.query.entity.value;
+
+    return run_query_param(entity, radius);
+};
+
+
+function run_query_param (entity, radius) {
     var url = `/api/v1/query/${radius}/`.concat(encodeURI(entity));
 
     var xhr = new XMLHttpRequest();
