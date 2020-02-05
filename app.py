@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from bs4 import BeautifulSoup
 from flasgger import Swagger
 from flask import Flask, g, \
-    jsonify, make_response, redirect, render_template, render_template_string, request, \
-    safe_join, send_file, send_from_directory, session, url_for
+    jsonify, make_response, redirect, render_template, render_template_string, \
+    request, safe_join, send_file, send_from_directory, session, url_for
 from flask_caching import Cache
 from http import HTTPStatus
 from pathlib import Path
@@ -22,18 +21,18 @@ import tempfile
 import time
 
 
-DEFAULT_PORT = 5000
-DEFAULT_CORPUS = "min_kg.jsonld"
-
-
 ######################################################################
 ## app definitions
+
+DEFAULT_PORT = 5000
+DEFAULT_CORPUS = "min_kg.jsonld"
+DEFAULT_DC_CACHE = "/tmp/richcontext"
 
 APP = Flask(__name__, static_folder="static", template_folder="templates")
 APP.config.from_pyfile("flask.cfg")
 
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
-DC_CACHE = dc.Cache("/tmp/richcontext")
+DC_CACHE = dc.Cache(DEFAULT_DC_CACHE)
 
 NET = rc_server.RCNetwork()
 LINKS = {}
@@ -57,16 +56,21 @@ def home_page ():
         if len(query["entity"]) < 1:
             del query["entity"]
 
+    if "radius" in query:
+        try:
+            radius = int(query["radius"].strip())
+        except:
+            radius = 2
+        finally:          
+            query["radius"] = str(radius)
+
     return render_template("index.html", query=query)
 
 
-## CSS, JavaScript
+## CSS, JavaScript, etc.
 @APP.route("/css/pure-min.css")
 @APP.route("/css/grids-responsive-min.css")
-@APP.route("/css/vis.css")
-@APP.route("/js/vis-network.min.js")
-
-## other well-known routes
+## plus other well-known routes
 @APP.route("/favicon.png")
 @APP.route("/apple-touch-icon.png")
 def static_from_root ():
@@ -152,52 +156,27 @@ def api_entity_query (radius, entity):
     global DC_CACHE, NET
 
     t0 = time.time()
-    handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
-    cache_token = get_hash([ entity, radius ], prefix="hood-")
+    entity = entity.strip()
 
-    subgraph = NET.get_subgraph(search_term=entity, radius=int(radius))
+    try:
+        radius_val = int(radius)
+        radius_val = max(radius_val, 1)
+        radius_val = min(radius_val, 10)
+    except:
+        radius_val = 2
+
+    cache_token = get_hash([ entity, str(radius_val) ], prefix="hood-")
+    handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
+
+    subgraph = NET.get_subgraph(search_term=entity, radius=radius_val)
     hood = NET.extract_neighborhood(subgraph, entity, html_path)
 
     with open(html_path, "r") as f:
         html = f.read()
         DC_CACHE[cache_token] = html
-        #soup = BeautifulSoup(html, "html.parser")
-        #node = soup.find("body").find("script")
-        #DC_CACHE[cache_token] = node.text
     
     os.remove(html_path)
-
     return hood.serialize(t0, cache_token)
-
-
-@CACHE.cached(timeout=3000)
-@APP.route("/api/v1/graph/<cache_token>", methods=["GET"])
-def fetch_graph (cache_token):
-    """
-    fetch a cached network diagram 
-    ---
-    tags:
-      - knowledge_graph
-    description: 'get the JavaScript to render a graph'
-    parameters:
-      - name: cache_token
-        in: path
-        required: true
-        type: string
-        description: token to use for disk cache access
-    produces:
-      - application/json
-    responses:
-      '200':
-        description: JavaScript to render a graph
-    """
-    global DC_CACHE, NET
-
-    view = {
-        "js": DC_CACHE[cache_token]
-        }
-
-    return jsonify(view)
 
 
 @CACHE.cached(timeout=3000)
@@ -293,20 +272,22 @@ def fetch_graph_html (cache_token):
 ######################################################################
 ## main
 
-def main (args):
+def build_links (args):
     global LINKS, NET
 
     elapsed_time = NET.load_network(Path(args.corpus))
     print("{:.2f} ms corpus parse time".format(elapsed_time))
 
     t0 = time.time()
-
-    with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
-        LINKS = NET.render_links(APP.template_folder)
-        json.dump(LINKS, f, indent=4, sort_keys=True, ensure_ascii=False)
-
+    LINKS = NET.render_links(APP.template_folder)
     print("{:.2f} ms link format time".format((time.time() - t0) * 1000.0))
 
+    with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
+        json.dump(LINKS, f, indent=4, sort_keys=True, ensure_ascii=False)
+
+
+def main (args):
+    build_links(args)
     APP.run(host="0.0.0.0", port=args.port, debug=True)
 
 

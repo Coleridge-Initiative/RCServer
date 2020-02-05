@@ -26,6 +26,7 @@
 
 <script>
 {% include "script.js" %}
+
 {% if query is not none %}
 (function () {
     var entity = "IRI Infoscan";
@@ -39,7 +40,7 @@
     radius = "{{ query.radius }}";
 {% endif %}
 
-    run_query_param(entity, radius);
+    run_query_string(entity, radius);
 })();
 {% endif %}
 </script>
