@@ -3,50 +3,14 @@ var cache_token = "";
 
 function fetch_graph_html () {
     var url = `/graph/${cache_token}`;
-    var view = document.getElementById("view_graph");
     var html = `<iframe name="frame" src="${url}" frameborder="0" scrolling="no"></iframe>`;
+    var view = document.getElementById("view_graph");
     view.innerHTML = html;
-};
-
-
-function fetch_graph () {
-    var url = `/api/v1/graph/${cache_token}`;
-
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = "json";
-    xhr.open("GET", url);
-    xhr.send();
-
-    xhr.onload = function() {
-	if (xhr.status != 200) {
-	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
-	} else {
-	    var obj = xhr.response;
-
-	    var g = document.createElement("script");
-	    var s = document.getElementsByTagName("script")[0];
-	    g.text = obj.js;
-	    s.parentNode.insertBefore(g, s);
-
-	    var view = document.getElementById("view_graph_script");
-
-	    if (view.childNodes.length > 0) {
-		view.removeChild(view.childNodes[0]);
-	    };
-
-	    view.appendChild(s);
-	};
-    };
-
-    xhr.onerror = function() {
-	alert("API request failed");
-    };
 };
 
 
 function get_links (index) {
     var url = `/api/v1/links/${index}`;
-
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";
     xhr.open("GET", url);
@@ -72,7 +36,6 @@ function get_links (index) {
 function enum_hood (entity_list, neighbor_name) {
     var neighbor = document.getElementById(neighbor_name);
     var ul_elem = document.createElement("ul");
-
     neighbor.innerHTML = "";
     neighbor.appendChild(ul_elem);
 
@@ -93,9 +56,22 @@ function enum_hood (entity_list, neighbor_name) {
 
 
 function run_query () {
-    var radius = document.forms.query.radius.value;
     var entity = document.forms.query.entity.value;
+    var radius = document.forms.query.radius.value;
+    return run_query_param(entity, radius);
+};
+
+
+function run_query_string (entity, radius) {
+    document.forms.query.entity.value = entity;
+    document.forms.query.radius.value = radius;
+    return run_query_param(entity, radius);
+};
+
+
+function run_query_param (entity, radius) {
     var url = `/api/v1/query/${radius}/`.concat(encodeURI(entity));
+    console.log(url);
 
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";
@@ -117,7 +93,6 @@ function run_query () {
 	    enum_hood(obj.data, "neighbor-datasets");
 	    enum_hood(obj.prov, "neighbor-providers");
 
-	    //fetch_graph();
 	    fetch_graph_html();
 	    document.body.style.cursor = "default";
 	};
