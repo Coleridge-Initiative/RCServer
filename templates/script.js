@@ -55,21 +55,21 @@ function enum_hood (entity_list, neighbor_name) {
 };
 
 
-function run_query () {
+function run_query_form () {
     var entity = document.forms.query.entity.value;
     var radius = document.forms.query.radius.value;
-    return run_query_param(entity, radius);
+    return run_query(entity, radius);
 };
 
 
 function run_query_string (entity, radius) {
     document.forms.query.entity.value = entity;
     document.forms.query.radius.value = radius;
-    return run_query_param(entity, radius);
+    return run_query(entity, radius);
 };
 
 
-function run_query_param (entity, radius) {
+function run_query (entity, radius) {
     var url = `/api/v1/query/${radius}/`.concat(encodeURI(entity));
     //console.log(url);
 
@@ -101,6 +101,15 @@ function run_query_param (entity, radius) {
     xhr.onerror = function() {
 	alert("API request failed");
     };
+
+    // update the browser history
+    document.title = `Rich Contex: @${radius} / ${entity}`;
+    shareable_url = `/?radius=${radius}&entity=${entity}`;
+
+    history.pushState({ id: "homepage" },
+		      document.title,
+		      shareable_url
+		      );
 
     return true;
 };
