@@ -3,7 +3,7 @@ var cache_token = "";
 
 function fetch_graph_html () {
     var url = `/graph/${cache_token}`;
-    var html = `<iframe name="frame" src="${url}" frameborder="0" scrolling="no"></iframe>`;
+    var html = `<iframe id="f" name="f" src="${url}" frameborder="0" scrolling="no"></iframe>`;
     var view = document.getElementById("view_graph");
     view.innerHTML = html;
 };
@@ -71,7 +71,7 @@ function run_query_string (entity, radius) {
 
 function run_query_param (entity, radius) {
     var url = `/api/v1/query/${radius}/`.concat(encodeURI(entity));
-    console.log(url);
+    //console.log(url);
 
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";

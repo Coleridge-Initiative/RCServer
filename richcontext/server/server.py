@@ -91,6 +91,7 @@ class RCNetwork:
             corpus = jld_corpus["@graph"]
 
         entities = [ self.parse_metadata(e) for e in corpus ]
+        unknown_journal = None
 
         # providers
         for id, kind, title, elem in entities:
@@ -124,18 +125,22 @@ class RCNetwork:
         # journals
         for id, kind, title, elem in entities:
             if kind == "Journal":
-                if "dct:identifier" in elem:
-                    issn = elem["dct:identifier"]["@value"]
+                if title == "unknown":
+                    unknown_journal = id
+
                 else:
-                    issn = ""
+                    if "dct:identifier" in elem:
+                        issn = elem["dct:identifier"]["@value"]
+                    else:
+                        issn = ""
 
-                view = {
-                    "id": id,
-                    "title": title,
-                    "issn": issn
-                    }
+                    view = {
+                        "id": id,
+                        "title": title,
+                        "issn": issn
+                        }
 
-                self.journals[id] = view
+                    self.journals[id] = view
 
         # authors
         for id, kind, title, elem in entities:
@@ -195,7 +200,11 @@ class RCNetwork:
 
                 if "dct:publisher" in elem:
                     jour_id = elem["dct:publisher"]["@id"].split("#")[1]
-                    self.journals[jour_id]["used"] = True
+
+                    if jour_id == unknown_journal:
+                        jour_id = None
+                    else:
+                        self.journals[jour_id]["used"] = True
 
                 view = {
                     "id": id,
