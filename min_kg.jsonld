@@ -101,6 +101,17 @@
             }
         },
         {
+            "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#journal-0aafa19f7ccf3ae64138",
+            "@type": "Journal",
+            "dct:identifier": {
+                "@type": "xsd:anyURI",
+                "@value": "https://portal.issn.org/resource/ISSN/0000-0000"
+            },
+            "dct:title": {
+                "@value": "unknown"
+            }
+        },
+        {
             "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#author-af651efbbb2aa7a9ba46",
             "@type": "Author",
             "dct:title": {
