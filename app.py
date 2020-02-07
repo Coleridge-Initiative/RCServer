@@ -22,20 +22,157 @@ import time
 
 
 ######################################################################
-## app definitions
+## web app definitions
 
-DEFAULT_PORT = 5000
-DEFAULT_CORPUS = "min_kg.jsonld"
-DEFAULT_DC_CACHE = "/tmp/richcontext"
+class RCServerApp (Flask):
+    DEFAULT_PORT = 5000
+    DEFAULT_CORPUS = "min_kg.jsonld"
+    DEFAULT_DC_CACHE = "/tmp/richcontext"
+    DEFAULT_PRECOMPUTE = False
 
-APP = Flask(__name__, static_folder="static", template_folder="templates")
-APP.config.from_pyfile("flask.cfg")
+    def __init__ (self, name):
+        """
+        initialize the web app
+        """
+        super(RCServerApp, self).__init__(name, static_folder="static", template_folder="templates")
+        self.config.from_pyfile("flask.cfg")
 
+        self.net = rc_server.RCNetwork()
+        self.disk_cache = dc.Cache(self.DEFAULT_DC_CACHE)
+        self.links = {}
+
+
+    def build_links (self, args):
+        """
+        pre-compute links from the given corpus file
+        """
+        elapsed_time = self.net.load_network(Path(args.corpus))
+        print("{:.2f} ms corpus parse time".format(elapsed_time))
+
+        t0 = time.time()
+        self.links = self.net.render_links(self.template_folder)
+        print("{:.2f} ms link format time".format((time.time() - t0) * 1000.0))
+
+        with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
+            json.dump(self.links, f, indent=4, sort_keys=True, ensure_ascii=False)
+
+
+    @classmethod
+    def get_hash (cls, strings, prefix=None, digest_size=10):
+        """
+        construct a unique identifier from a collection of strings
+        """
+        m = hashlib.blake2b(digest_size=digest_size)
+    
+        for elem in sorted(map(lambda x: x.encode("utf-8").lower().strip(), strings)):
+            m.update(elem)
+
+        if prefix:
+            id = prefix + m.hexdigest()
+        else:
+            id = m.hexdigest()
+
+        return "".join(filter(lambda x: x in string.printable, id))
+
+
+    def extract_query (self, request):
+        """
+        extract the query parameters from the given HTTP request
+        """
+        query = request.args.to_dict()
+    
+        if "entity" in query:
+            query["entity"] = query["entity"].strip()
+
+            if len(query["entity"]) < 1:
+                # remove invalid entity names
+                del query["entity"]
+
+        if "radius" in query:
+            try:
+                radius = int(query["radius"].strip())
+            except:
+                # force a valid radius value
+                radius = 2
+            finally:          
+                query["radius"] = str(radius)
+
+        return query
+
+
+    def run_entity_query (self, radius, entity):
+        """
+        run a neighborhood query for the given entity and radius
+        """
+        t0 = time.time()
+        entity = entity.strip()
+
+        try:
+            radius_val = int(radius)
+            radius_val = max(radius_val, 1)
+            radius_val = min(radius_val, 10)
+        except:
+            radius_val = 2
+
+        cache_token = self.get_hash([ entity, str(radius_val) ], prefix="hood-")
+        handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
+
+        subgraph = self.net.get_subgraph(search_term=entity, radius=radius_val)
+        hood = self.net.extract_neighborhood(subgraph, entity, html_path)
+
+        with open(html_path, "r") as f:
+            html = f.read()
+            self.disk_cache[cache_token] = html
+    
+        os.remove(html_path)
+
+        response = hood.serialize(t0, cache_token)
+        status = HTTPStatus.OK.value
+
+        return response, status
+
+
+    def fetch_graph (self, cache_token):
+        """
+        fetch the HTML to render the graph diagram referenced by the
+        `cache_token` parameter
+        """
+        if cache_token in self.disk_cache:
+            html = self.disk_cache[cache_token]
+            response = render_template_string(html)
+            status = HTTPStatus.OK.value
+        else:
+            response = f"<strong>NOT FOUND: {cache_token}</strong>"
+            status = HTTPStatus.BAD_REQUEST.value
+
+        return response, status
+
+
+    def get_entity_links (self, index):
+        """
+        render HTML for the link viewer for the entity referenced by
+        `index`
+        """
+        html = None
+        status = HTTPStatus.BAD_REQUEST.value
+
+        try:
+            id = int(index)
+        except:
+            id = -1
+
+        if id >= 0 and id < len(self.net.id_list):
+            uuid = self.net.id_list[id]
+
+            if uuid in self.links:
+                html = self.links[uuid]
+                status = HTTPStatus.OK.value
+
+        return html, status
+
+
+APP = RCServerApp(__name__)
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
-DC_CACHE = dc.Cache(DEFAULT_DC_CACHE)
-
-NET = rc_server.RCNetwork()
-LINKS = {}
 
 
 ######################################################################
@@ -48,22 +185,7 @@ def home_redirects ():
 
 @APP.route("/")
 def home_page ():
-    query = request.args.to_dict()
-    
-    if "entity" in query:
-        query["entity"] = query["entity"].strip()
-
-        if len(query["entity"]) < 1:
-            del query["entity"]
-
-    if "radius" in query:
-        try:
-            radius = int(query["radius"].strip())
-        except:
-            radius = 2
-        finally:          
-            query["radius"] = str(radius)
-
+    query = APP.extract_query(request)
     return render_template("index.html", query=query)
 
 
@@ -75,26 +197,6 @@ def home_page ():
 @APP.route("/apple-touch-icon.png")
 def static_from_root ():
     return send_from_directory(APP.static_folder, request.path[1:])
-
-
-######################################################################
-## utilities
-
-def get_hash (strings, prefix=None, digest_size=10):
-    """
-    construct a unique identifier from a collection of strings
-    """
-    m = hashlib.blake2b(digest_size=digest_size)
-    
-    for elem in sorted(map(lambda x: x.encode("utf-8").lower().strip(), strings)):
-        m.update(elem)
-
-    if prefix:
-        id = prefix + m.hexdigest()
-    else:
-        id = m.hexdigest()
-
-    return "".join(filter(lambda x: x in string.printable, id))
 
 
 ######################################################################
@@ -116,7 +218,7 @@ API_TEMPLATE = {
         "schemes": ["http"],
         "externalDocs": {
             "description": "Documentation",
-            "url": "https://github.com/Coleridge-Initiative/rclc/wiki"
+            "url": "https://github.com/Coleridge-Initiative/RCServer"
         }
     }
 
@@ -153,30 +255,8 @@ def api_entity_query (radius, entity):
       '200':
         description: neighborhood search within the knowledge graph
     """
-    global DC_CACHE, NET
-
-    t0 = time.time()
-    entity = entity.strip()
-
-    try:
-        radius_val = int(radius)
-        radius_val = max(radius_val, 1)
-        radius_val = min(radius_val, 10)
-    except:
-        radius_val = 2
-
-    cache_token = get_hash([ entity, str(radius_val) ], prefix="hood-")
-    handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
-
-    subgraph = NET.get_subgraph(search_term=entity, radius=radius_val)
-    hood = NET.extract_neighborhood(subgraph, entity, html_path)
-
-    with open(html_path, "r") as f:
-        html = f.read()
-        DC_CACHE[cache_token] = html
-    
-    os.remove(html_path)
-    return hood.serialize(t0, cache_token)
+    response, status = APP.run_entity_query(radius, entity)
+    return response, status
 
 
 @CACHE.cached(timeout=3000)
@@ -199,30 +279,18 @@ def api_entity_links (index):
     responses:
       '200':
         description: links for an entity within the knowledge graph
+      '400':
+        description: bad request; is the `index` parameter valid?
     """
-    global LINKS, NET
-
-    try:
-        id = int(index)
-    except:
-        id = -1
-
-    html = None
-
-    if id >= 0 and id < len(NET.id_list):
-        uuid = NET.id_list[id]
-
-        if uuid in LINKS:
-            html = LINKS[uuid]
-
-    return jsonify(html)
+    html, status = APP.get_entity_links(index)
+    return jsonify(html), status
 
 
 @CACHE.cached(timeout=3000)
-@APP.route("/api/v1/stuff", methods=["POST"])
-def api_post_stuff ():
+@APP.route("/api/v1/post-example", methods=["POST"])
+def api_post_example ():
     """
-    post some stuff
+    example to POST some stuff
     ---
     tags:
       - example
@@ -241,16 +309,15 @@ def api_post_stuff ():
       '400':
         description: bad request; is the `mcguffin` parameter correct?
     """
-
     mcguffin = request.form["mcguffin"]
     
-    response = {
+    view = {
         "received": mcguffin
         }
 
     status = HTTPStatus.OK.value
 
-    return jsonify(response), status
+    return jsonify(view), status
 
 
 @CACHE.cached(timeout=3000)
@@ -259,56 +326,50 @@ def fetch_graph_html (cache_token):
     """
     fetch the HTML to render a cached network diagram 
     """
-    global DC_CACHE
-
-    if cache_token in DC_CACHE:
-        html = DC_CACHE[cache_token]
-    else:
-        html = f"<strong>NOT FOUND: {cache_token}</strong>"
-
-    return render_template_string(html)
+    response, status = APP.fetch_graph(cache_token)
+    return response, status
 
 
 ######################################################################
 ## main
 
-def build_links (args):
-    global LINKS, NET
-
-    elapsed_time = NET.load_network(Path(args.corpus))
-    print("{:.2f} ms corpus parse time".format(elapsed_time))
-
-    t0 = time.time()
-    LINKS = NET.render_links(APP.template_folder)
-    print("{:.2f} ms link format time".format((time.time() - t0) * 1000.0))
-
-    with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
-        json.dump(LINKS, f, indent=4, sort_keys=True, ensure_ascii=False)
-
-
 def main (args):
-    build_links(args)
-    APP.run(host="0.0.0.0", port=args.port, debug=True)
+    """
+    dev/test entry point
+    """
+    if args.pre:
+        print(f"pre-computing links with: {args.corpus}")
+        sys.exit(0)
+    else:
+        APP.build_links(args)
+        APP.run(host="0.0.0.0", port=args.port, debug=True)
 
 
 if __name__ == "__main__":
     # parse the command line arguments, if any
     parser = argparse.ArgumentParser(
-        description="Rich Context: server, API, UI"
+        description="Rich Context: server, web app, API, UI"
         )
 
     parser.add_argument(
         "--port",
         type=int,
-        default=DEFAULT_PORT,
+        default=RCServerApp.DEFAULT_PORT,
         help="web IP port"
         )
 
     parser.add_argument(
         "--corpus",
         type=str,
-        default=DEFAULT_CORPUS,
+        default=RCServerApp.DEFAULT_CORPUS,
         help="corpus file as JSON-LD"
+        )
+
+    parser.add_argument(
+        "--pre",
+        type=bool,
+        default=RCServerApp.DEFAULT_PRECOMPUTE,
+        help="pre-compute links with the corpus file"
         )
 
     main(parser.parse_args())
