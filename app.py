@@ -29,21 +29,22 @@ import time
 
 class RCServerApp (Flask):
     DEFAULT_CORPUS = "min_kg.jsonld"
-    DEFAULT_DC_CACHE = "/tmp/richcontext"
+    DEFAULT_EXPIRY = 731 # two years in days
     DEFAULT_PORT = 5000
     DEFAULT_PRECOMPUTE = False
     DEFAULT_TOKEN = None
 
     AGENCY_SCOPE = {
-        "identity": "agency",
+        "id": "email@agency.gov",
         "roles": ["agency"]
         }
 
     ADMIN_SCOPE = {
-        "identity": "admin",
+        "id": "admin",
         "roles": ["admin"]
         }
 
+    PATH_DC_CACHE = "/tmp/richcontext"
     JWT_ISSUER = "urn:coleridgeinitiative.org:richcontext"
     LEEWAY_DELTA = datetime.timedelta(minutes=3)
 
@@ -56,15 +57,16 @@ class RCServerApp (Flask):
         self.config.from_pyfile("flask.cfg")
 
         self.net = rc_server.RCNetwork()
-        self.disk_cache = dc.Cache(self.DEFAULT_DC_CACHE)
+        self.disk_cache = dc.Cache(self.PATH_DC_CACHE)
         self.links = {}
+        self.corpus_path = Path(self.DEFAULT_CORPUS)
 
 
-    def build_links (self, args):
+    def run (self, host=None, port=None, debug=None, load_dotenv=True, **options):
         """
         pre-compute links from the given corpus file
         """
-        elapsed_time = self.net.load_network(Path(args.corpus))
+        elapsed_time = self.net.load_network(self.corpus_path)
         print("{:.2f} ms corpus parse time".format(elapsed_time))
 
         t0 = time.time()
@@ -73,6 +75,9 @@ class RCServerApp (Flask):
 
         with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
             json.dump(self.links, f, indent=4, sort_keys=True, ensure_ascii=False)
+
+        # call the super.run()
+        super(RCServerApp, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
 
 
     @classmethod
@@ -123,17 +128,17 @@ class RCServerApp (Flask):
         return payload["sco"]
 
 
-    def extract_query (self, request):
+    def extract_query_home (self, request):
         """
-        extract the query parameters from the given HTTP request
+        extract and validate the query parameters from an HTTP request
         """
         query = request.args.to_dict()
     
         if "entity" in query:
             query["entity"] = query["entity"].strip()
 
+            # TODO: remove invalid or unknown entity names
             if len(query["entity"]) < 1:
-                # remove invalid entity names
                 del query["entity"]
 
         if "radius" in query:
@@ -233,8 +238,35 @@ def home_redirects ():
 
 @APP.route("/")
 def home_page ():
-    query = APP.extract_query(request)
+    query = APP.extract_query_home(request)
     return render_template("index.html", query=query)
+
+
+@APP.route("/feedback")
+@APP.route("/feedback/")
+@APP.route("/feedback.html")
+@APP.route("/hitl.html")
+@APP.route("/hitl")
+def hitl_redirect ():
+    return redirect(url_for("hitl_page"))
+
+@APP.route("/hitl/")
+def hitl_page ():
+    return render_template("hitl.html")
+
+
+@APP.route("/research")
+@APP.route("/research.html")
+@APP.route("/workbench")
+@APP.route("/workbench.html")
+@APP.route("/work")
+@APP.route("/work.html")
+def work_redirect ():
+    return redirect(url_for("work_page"))
+
+@APP.route("/work/")
+def work_page ():
+    return render_template("work.html")
 
 
 ## CSS, JavaScript, etc.
@@ -386,23 +418,25 @@ def main (args):
     dev/test entry point
     """
     if args.token:
-        expiry = datetime.timedelta(days=1)
-        scope = copy.deepcopy(RCServerApp.AGENCY_SCOPE)
-        scope["identity"] = args.token
+        expiry = datetime.timedelta(days=APP.DEFAULT_EXPIRY)
+        scope = copy.deepcopy(APP.AGENCY_SCOPE)
+        scope["id"] = args.token
 
+        # generate web token
         token = APP.jwt_encode(APP.config["SECRET_KEY"], expiry, scope)
         print(token)
 
+        # confirm web token
         payload = APP.jwt_decode(APP.config["SECRET_KEY"], token)
         print(payload)
-        sys.exit(0)
 
     elif args.pre:
+        # pre-compute the links
         print(f"pre-computing links with: {args.corpus}")
-        sys.exit(0)
 
     else:
-        APP.build_links(args)
+        # run the app
+        APP.corpus_path = Path(args.corpus)
         APP.run(host="0.0.0.0", port=args.port, debug=True)
 
 
@@ -415,28 +449,28 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port",
         type=int,
-        default=RCServerApp.DEFAULT_PORT,
+        default=APP.DEFAULT_PORT,
         help="web IP port"
         )
 
     parser.add_argument(
         "--corpus",
         type=str,
-        default=RCServerApp.DEFAULT_CORPUS,
+        default=APP.DEFAULT_CORPUS,
         help="corpus file as JSON-LD"
         )
 
     parser.add_argument(
         "--pre",
         type=bool,
-        default=RCServerApp.DEFAULT_PRECOMPUTE,
+        default=APP.DEFAULT_PRECOMPUTE,
         help="pre-compute links with the corpus file"
         )
 
     parser.add_argument(
         "--token",
         type=str,
-        default=RCServerApp.DEFAULT_TOKEN,
+        default=APP.DEFAULT_TOKEN,
         help="generate a web token for agency staff"
         )
 

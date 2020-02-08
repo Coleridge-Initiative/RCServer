@@ -6,16 +6,42 @@
 
 <a
  href="https://coleridgeinitiative.org/richcontext"
+ title="Further information about Coleridge Initiative"
  target="_blank"
 >©2020, Coleridge Initiative</a>
 
+{% if request.path != "/" %}
 &nbsp;
 •
 &nbsp;
 
 <a
- href="#"
+ href="/"
+ title="Rich Context: knowledge graph analytics"
+>Analytics</a>
+{% endif %}
+
+{% if request.path != "/hitl/" %}
+&nbsp;
+•
+&nbsp;
+
+<a
+ href="/hitl/"
+ title="Rich Context: provide expert feedback for adding or correcting linked data"
 >Feedback</a>
+{% endif %}
+
+{% if request.path != "/work/" %}
+&nbsp;
+•
+&nbsp;
+
+<a
+ href="/work/"
+ title="Rich Context: research workbench using discovery services"
+>Research</a>
+{% endif %}
 
 &nbsp;
 •
@@ -23,6 +49,7 @@
 
 <a
  href="/apidocs/"
+ title="Rich Context: microservices based on OpenAPI"
  target="_blank"
 >OpenAPI</a>
 
@@ -32,6 +59,7 @@
 
 <a
  href="https://github.com/Coleridge-Initiative/rclc"
+ title="Rich Context: public machine learning competition"
  target="_blank"
 >ML Competition</a>
 
