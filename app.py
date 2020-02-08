@@ -11,9 +11,12 @@ from pathlib import Path
 from richcontext import server as rc_server
 import argparse
 import codecs
+import copy
+import datetime
 import diskcache as dc
 import hashlib
 import json
+import jwt
 import os
 import string
 import sys
@@ -25,10 +28,25 @@ import time
 ## web app definitions
 
 class RCServerApp (Flask):
-    DEFAULT_PORT = 5000
     DEFAULT_CORPUS = "min_kg.jsonld"
     DEFAULT_DC_CACHE = "/tmp/richcontext"
+    DEFAULT_PORT = 5000
     DEFAULT_PRECOMPUTE = False
+    DEFAULT_TOKEN = None
+
+    AGENCY_SCOPE = {
+        "identity": "agency",
+        "roles": ["agency"]
+        }
+
+    ADMIN_SCOPE = {
+        "identity": "admin",
+        "roles": ["admin"]
+        }
+
+    JWT_ISSUER = "urn:coleridgeinitiative.org:richcontext"
+    LEEWAY_DELTA = datetime.timedelta(minutes=3)
+
 
     def __init__ (self, name):
         """
@@ -73,6 +91,36 @@ class RCServerApp (Flask):
             id = m.hexdigest()
 
         return "".join(filter(lambda x: x in string.printable, id))
+
+
+    @classmethod
+    def jwt_encode (cls, key, expiry, scopes):
+        """
+        encode a JWT payload for a web token
+        """
+        payload = {
+            "iss": cls.JWT_ISSUER,
+            "exp": datetime.datetime.utcnow() + expiry,
+            "sco": scopes
+            }
+
+        return jwt.encode(payload, key, algorithm="HS256").decode("utf-8")
+
+
+    @classmethod
+    def jwt_decode (cls, key, token):
+        """
+        decode and verify a JWT payload for a web token
+        """
+        payload = jwt.decode(
+            token, 
+            key,
+            algorithms=["HS256"],
+            leeway=cls.LEEWAY_DELTA,
+            issuer=cls.JWT_ISSUER
+            )
+
+        return payload["sco"]
 
 
     def extract_query (self, request):
@@ -337,9 +385,22 @@ def main (args):
     """
     dev/test entry point
     """
-    if args.pre:
+    if args.token:
+        expiry = datetime.timedelta(days=1)
+        scope = copy.deepcopy(RCServerApp.AGENCY_SCOPE)
+        scope["identity"] = args.token
+
+        token = APP.jwt_encode(APP.config["SECRET_KEY"], expiry, scope)
+        print(token)
+
+        payload = APP.jwt_decode(APP.config["SECRET_KEY"], token)
+        print(payload)
+        sys.exit(0)
+
+    elif args.pre:
         print(f"pre-computing links with: {args.corpus}")
         sys.exit(0)
+
     else:
         APP.build_links(args)
         APP.run(host="0.0.0.0", port=args.port, debug=True)
@@ -370,6 +431,13 @@ if __name__ == "__main__":
         type=bool,
         default=RCServerApp.DEFAULT_PRECOMPUTE,
         help="pre-compute links with the corpus file"
+        )
+
+    parser.add_argument(
+        "--token",
+        type=str,
+        default=RCServerApp.DEFAULT_TOKEN,
+        help="generate a web token for agency staff"
         )
 
     main(parser.parse_args())
