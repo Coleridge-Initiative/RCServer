@@ -56,28 +56,34 @@ class RCServerApp (Flask):
         super(RCServerApp, self).__init__(name, static_folder="static", template_folder="templates")
         self.config.from_pyfile("flask.cfg")
 
-        self.net = rc_server.RCNetwork()
         self.disk_cache = dc.Cache(self.PATH_DC_CACHE)
-        self.links = {}
         self.corpus_path = Path(self.DEFAULT_CORPUS)
+        self.net = rc_server.RCNetwork()
 
 
     def run (self, host=None, port=None, debug=None, load_dotenv=True, **options):
         """
         pre-compute links from the given corpus file
         """
+        self.links = self.net.deserialize()
+        print(f"{len(self.net.labels)} elements in the knowledge graph")
+
+        # call the super.run()
+        super(RCServerApp, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
+
+
+    def build_links (self):
         elapsed_time = self.net.load_network(self.corpus_path)
         print("{:.2f} ms corpus parse time".format(elapsed_time))
 
         t0 = time.time()
-        self.links = self.net.render_links(self.template_folder)
-        print("{:.2f} ms link format time".format((time.time() - t0) * 1000.0))
+        links = self.net.render_links(self.template_folder)
+        t1 = time.time()
 
-        with codecs.open(Path("links.json"), "wb", encoding="utf8") as f:
-            json.dump(self.links, f, indent=4, sort_keys=True, ensure_ascii=False)
+        print("{:.2f} ms link format time".format((t1 - t0) * 1000.0))
+        print(f"{len(self.net.labels)} elements in the knowledge graph")
 
-        # call the super.run()
-        super(RCServerApp, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
+        return links
 
 
     @classmethod
@@ -433,10 +439,12 @@ def main (args):
     elif args.pre:
         # pre-compute the links
         print(f"pre-computing links with: {args.corpus}")
+        APP.corpus_path = Path(args.corpus)
+        links = APP.build_links()
+        APP.net.serialize(links)
 
     else:
         # run the app
-        APP.corpus_path = Path(args.corpus)
         APP.run(host="0.0.0.0", port=args.port, debug=True)
 
 

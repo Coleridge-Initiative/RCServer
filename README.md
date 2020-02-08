@@ -26,7 +26,7 @@ SEND_FILE_MAX_AGE_DEFAULT = 3000
 ```
 
 
-## Quick Launch
+## Launch
 
 ```
 python app.py
@@ -44,8 +44,13 @@ JSON-LD file for the graph from
 
   - <https://storage.googleapis.com/rich-context/tmp.jsonld>
 
-Then launch with:
+Next, pre-compute the links for the KG:
 
 ```
-python app.py --corpus tmp.jsonld
+python app.py --pre true --corpus tmp.jsonld 
 ```
+
+That updates the `precomp.json` file, which the web app loads whenever
+it gets launched.
+
+Then re-launch the web app.

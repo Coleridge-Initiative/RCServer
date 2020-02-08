@@ -12,7 +12,6 @@ import json
 import networkx as nx
 import numpy as np
 import pandas as pd
-
 import sys
 import time
 import traceback
@@ -299,7 +298,8 @@ class RCNetwork:
 
     def load_network (self, path):
         """
-        full usage pattern, prior to subgraph
+        run the full usage pattern, prior to use of serialize() or
+        subgraph()
         """
         t0 = time.time()
 
@@ -309,6 +309,66 @@ class RCNetwork:
 
         elapsed_time = (time.time() - t0) * 1000.0
         return elapsed_time
+
+
+    def serialize (self, links, path=Path("precomp.json")):
+        """
+        serialize all of the data structures required to recreate the
+        knowledge graph
+        """
+        g = nx.readwrite.json_graph.node_link_data(self.nxg),
+
+        view = [
+            g,
+            links,
+            self.id_list,
+            list(self.labels.items()),
+            list(self.scale.items()),
+            list(self.providers.items()),
+            list(self.datasets.items()),
+            list(self.journals.items()),
+            list(self.authors.items()),
+            list(self.publications.items())
+            ]
+
+        with codecs.open(path, "wb", encoding="utf8") as f:
+            json.dump(view, f, ensure_ascii=False)
+
+
+    def deserialize (self, path=Path("precomp.json")):
+        """
+        deserialize all of the data structures required to recreate
+        the knowledge graph
+        """
+        with codecs.open(path, "r", encoding="utf8") as f:
+            view = json.load(f)
+            g, links, id_list, labels, scale, prov, data, jour, auth, publ = view
+
+            self.nxg = nx.readwrite.json_graph.node_link_graph(g[0])
+            self.id_list = id_list
+
+            for k, v in labels:
+                self.labels[k] = v
+
+            for k, v in scale:
+                self.scale[k] = v
+
+            for k, v in prov:
+                self.providers[k] = v
+
+            for k, v in data:
+                self.datasets[k] = v
+
+            for k, v in jour:
+                self.journals[k] = v
+
+            for k, v in auth:
+                self.authors[k] = v
+
+            for k, v in publ:
+                self.publications[k] = v
+
+            return links
 
 
     ######################################################################
