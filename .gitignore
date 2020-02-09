@@ -1,9 +1,9 @@
 # Configuration, log files, reports, and other state
 
 tmp.jsonld
-links.json
 flask.cfg
 rc.cfg
+token.txt
 nohup.out
 .ipynb_checkpoints/*
 .DS_Store

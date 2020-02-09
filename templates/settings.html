@@ -1,0 +1,34 @@
+<form
+ id="settings"
+ class="pure-form"
+>
+<fieldset>
+<strong>
+<label for="token">web token:</label>
+</strong>
+<input
+ name="token"
+ type="text"
+ style="width: 40em;"
+{% if token is not none %}
+ value="{{ token }}"
+ disabled="disabled"
+{% endif %}
+/>
+<em>
+{% if token is none %}
+<label>(optional)</label>
+</em>
+&nbsp;
+<button
+ id="set_web_token"
+ type="button"
+ class="pure-button pure-button-primary"
+ onclick="conf_web_token()"
+>set</button>
+{% endif %}
+</fieldset>
+</form>
+
+<div id="conf_token_status">
+</div>

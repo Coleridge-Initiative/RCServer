@@ -87,11 +87,11 @@ function run_query (entity, radius) {
 	    var obj = xhr.response;
 	    cache_token = obj.toke;
 
-	    enum_hood(obj.auth, "neighbor-authors");
-	    enum_hood(obj.pubs, "neighbor-publications");
-	    enum_hood(obj.jour, "neighbor-journals");
-	    enum_hood(obj.data, "neighbor-datasets");
-	    enum_hood(obj.prov, "neighbor-providers");
+	    enum_hood(obj.auth, "neighbor-auth");
+	    enum_hood(obj.publ, "neighbor-publ");
+	    enum_hood(obj.jour, "neighbor-jour");
+	    enum_hood(obj.data, "neighbor-data");
+	    enum_hood(obj.prov, "neighbor-prov");
 
 	    fetch_graph_html();
 	    document.body.style.cursor = "default";
@@ -119,20 +119,62 @@ function open_view (view_name) {
     var tabcontent = document.getElementsByClassName("tabcontent");
 
     for (i = 0; i < tabcontent.length; i++) {
-	tabcontent[i].style.display = "none";
+	if (tabcontent[i].style) {
+	    tabcontent[i].style.display = "none";
+	};
     };
 
-    document.getElementById(view_name).style.display = "block";
+    var view = document.getElementById(view_name);
+
+    if (view) {
+	view.style.display = "block";
+    };
 
     var tabs = document.getElementsByClassName("pure-menu-item");
 
     for (i = 0; i < tabs.length; i++) {
-	tabs[i].classList.remove("pure-menu-selected");
+	if (tabs[i] && tabs[i].classList) {
+	    tabs[i].classList.remove("pure-menu-selected");
+	};
     };
 
     var tab = document.getElementById("tab_".concat(view_name));
 
-    tab.classList.toggle("pure-menu-selected");
+    if (tab) {
+	tab.classList.toggle("pure-menu-selected");
+    };
+};
+
+
+function conf_web_token () {
+    var url = "/api/v1/conf_web_token/";
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("POST", url, true);
+
+    var token = document.forms.settings.token.value;
+    var data = new FormData();
+    data.append("token", token);
+    xhr.send(data);
+
+    xhr.onload = function() {
+	if (xhr.status != 200) {
+	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+	} else { // use the result
+	    var obj = xhr.response;
+	    var status = document.getElementById("conf_token_status");
+	    status.innerHTML = obj;
+
+	    document.forms.settings.token.readOnly = true;
+
+	    var button = document.getElementById("set_web_token");
+	    button.disabled = true;
+	};
+    };
+
+    xhr.onerror = function() {
+	alert("API request failed");
+    };
 };
 
 

@@ -10,6 +10,13 @@ body {
 	min-height: 100vh;
 }
 
+
+#query {
+	padding: 1em;
+	height: 3em;
+}
+
+
 .neighbor {
 	background-color: rgb(245, 245, 245);
 	border: 1px solid #ccc;
@@ -44,10 +51,6 @@ body {
 	padding-bottom: 0.4em;
 }
 
-#query {
-	padding: 1em;
-	height: 3em;
-}
 
 #viewer_menu {
 	padding: .1em;
@@ -84,11 +87,26 @@ body {
 	border: none;
 }
 
+
+#hitl {
+	padding: 2em;
+}
+
+#work {
+	padding: 2em;
+}
+
+#conf {
+	padding: 2em;
+}
+
+
 #footer {
 	text-align: center;
 	padding: .5em;
 	height: 2em;
 }
+
 
 a:link {
 	color: blue;
