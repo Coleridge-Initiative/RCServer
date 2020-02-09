@@ -84,6 +84,10 @@ body {
 	border: none;
 }
 
+#hitl {
+	padding: 2em;
+}
+
 #footer {
 	text-align: center;
 	padding: .5em;
