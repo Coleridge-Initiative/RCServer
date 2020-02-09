@@ -136,6 +136,30 @@ function open_view (view_name) {
 };
 
 
+function conf_web_token () {
+    var url = "/api/v1/conf_web_token/";
+    var token = document.forms.settings.token.value;
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("POST", url, token);
+    xhr.send();
+
+    xhr.onload = function() {
+	if (xhr.status != 200) {
+	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+	} else { // use the result
+	    var obj = xhr.response;
+	    var status = document.getElementById("status");
+	    status.innerHTML = obj;
+	};
+    };
+
+    xhr.onerror = function() {
+	alert("API request failed");
+    };
+};
+
+
 // the following runs as soon as the page loads...
 
 (function () {

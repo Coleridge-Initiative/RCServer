@@ -20,6 +20,7 @@ import jwt
 import os
 import string
 import sys
+import traceback
 import tempfile
 import time
 import uuid
@@ -328,7 +329,7 @@ API_TEMPLATE = {
         "swagger": "2.0",
         "info": {
             "title": "Rich Context",
-            "description": "OpenAPI for Rich Context microservices",
+            "description": "Rich Context microservices based on OpenAPI",
             "contact": {
                 "responsibleOrganization": "Coleridge Initiative",
                 "name": "API Support",
@@ -410,39 +411,49 @@ def api_entity_links (index):
     return jsonify(html), status
 
 
-@CACHE.cached(timeout=3000)
-@APP.route("/api/v1/post-example", methods=["POST"])
-def api_post_example ():
+@APP.route("/api/v1/conf_web_token/", methods=["POST"])
+def conf_post_web_token ():
     """
-    example to POST some stuff
+    set a web token
     ---
     tags:
-      - example
-    description: 'post some stuff'
+      - configuration
+    description: 'set a web token'
     parameters:
-      - name: mcguffin
+      - name: token
         in: formData
         required: true
         type: string
-        description: some stuff
+        description: web token for authenticated roles and feedback
     produces:
       - application/json
     responses:
       '200':
-        description: got your stuff just fine
+        description: web token was set
       '400':
-        description: bad request; is the `mcguffin` parameter correct?
+        description: bad request; is the web token correct?
     """
     update_session()
-    mcguffin = request.form["mcguffin"]
-    
-    view = {
-        "received": mcguffin
-        }
 
-    status = HTTPStatus.OK.value
+    try:
+        print(request.form)
+        token = request.form["token"].strip()
+        print(token)
+        payload = APP.jwt_decode(APP.config["SECRET_KEY"], token)
+        print(payload)
+    except:
+        traceback.print_exc()
+        payload = None
 
-    return jsonify(view), status
+    if payload:
+        session["scope"] = payload
+        response = "web token setting succeeded"
+        status = HTTPStatus.OK.value
+    else:
+        response = "web token value was not valid"
+        status = HTTPStatus.BAD_REQUEST.value
+
+    return jsonify(response), status
 
 
 @CACHE.cached(timeout=3000)
@@ -475,6 +486,7 @@ def main (args):
         # confirm web token
         payload = APP.jwt_decode(APP.config["SECRET_KEY"], token)
         print(payload)
+
 
     elif args.pre:
         # pre-compute the links
