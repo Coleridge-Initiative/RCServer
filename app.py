@@ -60,16 +60,8 @@ class RCServerApp (Flask):
         self.corpus_path = Path(self.DEFAULT_CORPUS)
         self.net = rc_server.RCNetwork()
 
-
-    def run (self, host=None, port=None, debug=None, load_dotenv=True, **options):
-        """
-        pre-compute links from the given corpus file
-        """
         self.links = self.net.deserialize()
         print(f"{len(self.net.labels)} elements in the knowledge graph")
-
-        # call the super.run()
-        super(RCServerApp, self).run(host=host, port=port, debug=debug, load_dotenv=load_dotenv, **options)
 
 
     def build_links (self):

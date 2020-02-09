@@ -4,8 +4,8 @@ This provides browser-based search and discovery for the Rich Context
 knowledge graph, including:
 
   - web app based on Flask
-  - UI based on PureCSS
   - API based on OpenAPI/Swagger
+  - UI based on PureCSS
 
 
 ## Install
@@ -26,6 +26,11 @@ SEND_FILE_MAX_AGE_DEFAULT = 3000
 ```
 
 
+## Command Line Interface
+
+See `python app.py --help` for a list of command line options
+
+
 ## Launch
 
 ```
@@ -34,13 +39,17 @@ python app.py
 
 ...then load `http://localhost:5000/` in your browser.
 
-See `python app.py --help` for a list of command line options
+Alternatively, you can run `gunicorn` to get a WSGI-compliant server:
+
+```
+gunicorn -w 4 -b 127.0.0.1:5000 wsgi:APP
+```
 
 
-## Full Graph
+## Entire Graph
 
 To launch with the full knowledge graph, first download the latest
-JSON-LD file for the graph from
+JSON-LD file for the graph from:
 
   - <https://storage.googleapis.com/rich-context/tmp.jsonld>
 
