@@ -3,6 +3,7 @@
 tmp.jsonld
 flask.cfg
 rc.cfg
+token.txt
 nohup.out
 .ipynb_checkpoints/*
 .DS_Store

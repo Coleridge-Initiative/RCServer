@@ -12,6 +12,7 @@ from richcontext import server as rc_server
 import argparse
 import codecs
 import copy
+import csv
 import datetime
 import diskcache as dc
 import hashlib
@@ -31,24 +32,11 @@ import uuid
 
 class RCServerApp (Flask):
     DEFAULT_CORPUS = "min_kg.jsonld"
-    DEFAULT_EXPIRY = 731 # two years in days
-    DEFAULT_PORT = 5000
-    DEFAULT_PRECOMPUTE = False
-    DEFAULT_TOKEN = None
+    DEFAULT_PRECOMPUTE = False	# CLI flag - pre-compute results
+    DEFAULT_PORT = 5000		# CLI arg - port used for dev/test
+    DEFAULT_TOKEN = None	# CLI arg - input TSV file for web tokens
 
-    AGENCY_SCOPE = {
-        "id": "email@agency.gov",
-        "roles": ["agency"]
-        }
-
-    ADMIN_SCOPE = {
-        "id": "admin",
-        "roles": ["admin"]
-        }
-
-    PATH_DC_CACHE = "/tmp/richcontext"
-    JWT_ISSUER = "urn:coleridgeinitiative.org:richcontext"
-    LEEWAY_DELTA = datetime.timedelta(minutes=3)
+    PATH_DC_CACHE = "/tmp/richcontext"	# TODO: move to flask.cfg
 
 
     def __init__ (self, name):
@@ -66,19 +54,8 @@ class RCServerApp (Flask):
         print(f"{len(self.net.labels)} elements in the knowledge graph")
 
 
-    def build_links (self):
-        elapsed_time = self.net.load_network(self.corpus_path)
-        print("{:.2f} ms corpus parse time".format(elapsed_time))
-
-        t0 = time.time()
-        links = self.net.render_links(self.template_folder)
-        t1 = time.time()
-
-        print("{:.2f} ms link format time".format((t1 - t0) * 1000.0))
-        print(f"{len(self.net.labels)} elements in the knowledge graph")
-
-        return links
-
+    ######################################################################
+    ## support for pre-computing and caching results
 
     @classmethod
     def get_hash (cls, strings, prefix=None, digest_size=10):
@@ -96,6 +73,37 @@ class RCServerApp (Flask):
             id = m.hexdigest()
 
         return "".join(filter(lambda x: x in string.printable, id))
+
+
+    def build_links (self):
+        elapsed_time = self.net.load_network(self.corpus_path)
+        print("{:.2f} ms corpus parse time".format(elapsed_time))
+
+        t0 = time.time()
+        links = self.net.render_links(self.template_folder)
+        t1 = time.time()
+
+        print("{:.2f} ms link format time".format((t1 - t0) * 1000.0))
+        print(f"{len(self.net.labels)} elements in the knowledge graph")
+
+        return links
+
+
+    ######################################################################
+    ## manage web tokens, scoped roles, and identifying HITL feedback
+
+    SCOPE_AGENCY = "agency"
+    SCOPE_CI = "ci"
+    SCOPE_EXPERT = "expert"
+    SCOPE_OPS = "ops"
+
+    SCOPE_TEMPLATE = {
+        "id": "email@agency.gov",
+        "roles": [ SCOPE_AGENCY ]
+        }
+
+    JWT_ISSUER = "urn:coleridgeinitiative.org:richcontext"
+    LEEWAY_DELTA = datetime.timedelta(minutes=3)
 
 
     @classmethod
@@ -127,6 +135,49 @@ class RCServerApp (Flask):
 
         return payload["sco"]
 
+
+    def generate_tokens (self, token_input):
+        """
+        generate a list of web tokens based on an input file
+        """
+        results = []
+
+        # parse the input and generate a web token for each entry
+        with codecs.open(Path(token_input), "r", encoding="utf8") as f:
+            reader = csv.reader(f, delimiter="\t")
+            next(reader) # skip headers
+
+            for email, expiry, roles in reader:
+                scope = copy.deepcopy(self.SCOPE_TEMPLATE)
+
+                try:
+                    scope["id"] = email
+                    scope["roles"] = [ r.lower().strip() for r in roles.split(",") ]
+
+                    expiry_days = int(expiry)
+                    expiry = datetime.timedelta(days=expiry_days)
+
+                    token = self.jwt_encode(self.config["SECRET_KEY"], expiry, scope)
+                    results.append([ email, token ])
+                except:
+                    traceback.print_exc()
+                    print("bad format: |{}| |{}| |{}|".format(email, expiry, roles))
+
+        # write the results to send to users
+        out_path = Path("token.txt")
+
+        with codecs.open(out_path, "wb", encoding="utf8") as f:
+            for email, token in results:
+                f.write(str(self.jwt_decode(self.config["SECRET_KEY"], token)))
+                f.write("\n\n")
+                f.write(token)
+                f.write("\n\n\n")
+
+        print(f"{len(results)} web tokens generated and saved in {out_path}")
+
+
+    ######################################################################
+    ## support for API calls to query the KG
 
     def extract_query_home (self, request):
         """
@@ -309,7 +360,13 @@ def conf_redirect ():
 @APP.route("/conf/")
 def conf_page ():
     update_session()
-    return render_template("conf.html")
+
+    if "token" in session:
+        token = session["token"]
+    else:
+        token = None
+
+    return render_template("conf.html", token=token)
 
 
 ## CSS, JavaScript, etc.
@@ -424,7 +481,7 @@ def conf_post_web_token ():
         in: formData
         required: true
         type: string
-        description: web token for authenticated roles and feedback
+        description: set a web token for specifying roles and identifying HITL feedback from a known user
     produces:
       - application/json
     responses:
@@ -436,17 +493,19 @@ def conf_post_web_token ():
     update_session()
 
     try:
-        print(request.form)
+        #print(request.form)
         token = request.form["token"].strip()
-        print(token)
+        #print(token)
         payload = APP.jwt_decode(APP.config["SECRET_KEY"], token)
-        print(payload)
+        #print(payload)
     except:
         traceback.print_exc()
         payload = None
 
     if payload:
-        session["scope"] = payload
+        session["token"] = token
+        session["roles"] = payload["roles"]
+
         response = "web token setting succeeded"
         status = HTTPStatus.OK.value
     else:
@@ -475,28 +534,18 @@ def main (args):
     dev/test entry point
     """
     if args.token:
-        expiry = datetime.timedelta(days=APP.DEFAULT_EXPIRY)
-        scope = copy.deepcopy(APP.AGENCY_SCOPE)
-        scope["id"] = args.token
-
-        # generate web token
-        token = APP.jwt_encode(APP.config["SECRET_KEY"], expiry, scope)
-        print(token)
-
-        # confirm web token
-        payload = APP.jwt_decode(APP.config["SECRET_KEY"], token)
-        print(payload)
-
+        # generate a list of web tokens based on an input file
+        APP.generate_tokens(args.token)
 
     elif args.pre:
-        # pre-compute the links
+        # pre-compute KG links as the `precomp.json` file
         print(f"pre-computing links with: {args.corpus}")
         APP.corpus_path = Path(args.corpus)
         links = APP.build_links()
         APP.net.serialize(links)
 
     else:
-        # run the app
+        # run the app in a test environment
         APP.run(host="0.0.0.0", port=args.port, debug=True)
 
 
@@ -531,7 +580,7 @@ if __name__ == "__main__":
         "--token",
         type=str,
         default=APP.DEFAULT_TOKEN,
-        help="generate a web token for agency staff"
+        help="input TSV file for generating web tokens"
         )
 
     main(parser.parse_args())

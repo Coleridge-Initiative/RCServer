@@ -162,7 +162,7 @@ function conf_web_token () {
 	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
 	} else { // use the result
 	    var obj = xhr.response;
-	    var status = document.getElementById("conf_status");
+	    var status = document.getElementById("conf_token_status");
 	    status.innerHTML = obj;
 
 	    document.forms.settings.token.readOnly = true;
