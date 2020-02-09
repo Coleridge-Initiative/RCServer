@@ -119,38 +119,56 @@ function open_view (view_name) {
     var tabcontent = document.getElementsByClassName("tabcontent");
 
     for (i = 0; i < tabcontent.length; i++) {
-	tabcontent[i].style.display = "none";
+	if (tabcontent[i].style) {
+	    tabcontent[i].style.display = "none";
+	};
     };
 
-    document.getElementById(view_name).style.display = "block";
+    var view = document.getElementById(view_name);
+
+    if (view) {
+	view.style.display = "block";
+    };
 
     var tabs = document.getElementsByClassName("pure-menu-item");
 
     for (i = 0; i < tabs.length; i++) {
-	tabs[i].classList.remove("pure-menu-selected");
+	if (tabs[i] && tabs[i].classList) {
+	    tabs[i].classList.remove("pure-menu-selected");
+	};
     };
 
     var tab = document.getElementById("tab_".concat(view_name));
 
-    tab.classList.toggle("pure-menu-selected");
+    if (tab) {
+	tab.classList.toggle("pure-menu-selected");
+    };
 };
 
 
 function conf_web_token () {
     var url = "/api/v1/conf_web_token/";
-    var token = document.forms.settings.token.value;
     var xhr = new XMLHttpRequest();
     xhr.responseType = "json";
-    xhr.open("POST", url, token);
-    xhr.send();
+    xhr.open("POST", url, true);
+
+    var token = document.forms.settings.token.value;
+    var data = new FormData();
+    data.append("token", token);
+    xhr.send(data);
 
     xhr.onload = function() {
 	if (xhr.status != 200) {
 	    alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
 	} else { // use the result
 	    var obj = xhr.response;
-	    var status = document.getElementById("status");
+	    var status = document.getElementById("conf_status");
 	    status.innerHTML = obj;
+
+	    document.forms.settings.token.readOnly = true;
+
+	    var button = document.getElementById("set_web_token");
+	    button.disabled = true;
 	};
     };
 
