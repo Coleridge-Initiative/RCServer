@@ -22,6 +22,7 @@ import string
 import sys
 import tempfile
 import time
+import uuid
 
 
 ######################################################################
@@ -227,6 +228,29 @@ CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
 
 
 ######################################################################
+## session management
+
+def update_session ():
+    session.modified = True
+
+    if not "uuid" in session:
+        session["uuid"] = uuid.uuid4().hex
+
+    try:
+        session["counter"] += 1
+    except KeyError:
+        session["counter"] = 1
+        session.permanent = True
+
+
+@APP.route("/dump/session/")
+def dump_session ():
+    response = make_response(repr(session))
+    response.content_type = "text/plain"
+    return response
+
+
+######################################################################
 ## page routes
 
 @APP.route("/index.html")
@@ -236,6 +260,7 @@ def home_redirects ():
 
 @APP.route("/")
 def home_page ():
+    update_session()
     query = APP.extract_query_home(request)
     return render_template("index.html", query=query)
 
@@ -250,6 +275,7 @@ def hitl_redirect ():
 
 @APP.route("/hitl/")
 def hitl_page ():
+    update_session()
     return render_template("hitl.html")
 
 
@@ -264,6 +290,7 @@ def work_redirect ():
 
 @APP.route("/work/")
 def work_page ():
+    update_session()
     return render_template("work.html")
 
 
@@ -333,6 +360,7 @@ def api_entity_query (radius, entity):
       '200':
         description: neighborhood search within the knowledge graph
     """
+    update_session()
     response, status = APP.run_entity_query(radius, entity)
     return response, status
 
@@ -360,6 +388,7 @@ def api_entity_links (index):
       '400':
         description: bad request; is the `index` parameter valid?
     """
+    update_session()
     html, status = APP.get_entity_links(index)
     return jsonify(html), status
 
@@ -387,6 +416,7 @@ def api_post_example ():
       '400':
         description: bad request; is the `mcguffin` parameter correct?
     """
+    update_session()
     mcguffin = request.form["mcguffin"]
     
     view = {
@@ -404,6 +434,7 @@ def fetch_graph_html (cache_token):
     """
     fetch the HTML to render a cached network diagram 
     """
+    update_session()
     response, status = APP.fetch_graph(cache_token)
     return response, status
 
