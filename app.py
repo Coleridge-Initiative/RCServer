@@ -294,6 +294,23 @@ def work_page ():
     return render_template("work.html")
 
 
+@APP.route("/settings")
+@APP.route("/settings/")
+@APP.route("/configure")
+@APP.route("/configure/")
+@APP.route("/config")
+@APP.route("/config/")
+@APP.route("/conf")
+@APP.route("/conf.html")
+def conf_redirect ():
+    return redirect(url_for("conf_page"))
+
+@APP.route("/conf/")
+def conf_page ():
+    update_session()
+    return render_template("conf.html")
+
+
 ## CSS, JavaScript, etc.
 @APP.route("/css/pure-min.css")
 @APP.route("/css/grids-responsive-min.css")
