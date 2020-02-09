@@ -30,6 +30,15 @@ doi:
 <strong>{{ doi }}</strong>
 </li>
 {% endif %}
+{% if pdf is not none %}
+<li>
+open access:
+<a
+ href="{{ pdf }}"
+ target="_blank"
+>{{ pdf }}</a>
+</li>
+{% endif %}
 </ul>
 
 <p>authors:</p>

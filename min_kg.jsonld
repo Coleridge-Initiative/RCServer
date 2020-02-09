@@ -72,6 +72,10 @@
             "foaf:page": {
                 "@type": "xsd:anyURI",
                 "@value": "https://doi.org/10.1177/1090198119831759"
+            },
+            "openAccess": {
+                "@type": "xsd:anyURI",
+                "@value": "http://pdfs.semanticscholar.org/fb9b/055d6bb4e52f4ff8b77d1057bdf7852b14ae.pdf"
             }
         },
         {

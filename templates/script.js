@@ -87,11 +87,11 @@ function run_query (entity, radius) {
 	    var obj = xhr.response;
 	    cache_token = obj.toke;
 
-	    enum_hood(obj.auth, "neighbor-authors");
-	    enum_hood(obj.pubs, "neighbor-publications");
-	    enum_hood(obj.jour, "neighbor-journals");
-	    enum_hood(obj.data, "neighbor-datasets");
-	    enum_hood(obj.prov, "neighbor-providers");
+	    enum_hood(obj.auth, "neighbor-auth");
+	    enum_hood(obj.publ, "neighbor-publ");
+	    enum_hood(obj.jour, "neighbor-jour");
+	    enum_hood(obj.data, "neighbor-data");
+	    enum_hood(obj.prov, "neighbor-prov");
 
 	    fetch_graph_html();
 	    document.body.style.cursor = "default";
