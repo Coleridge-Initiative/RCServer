@@ -21,9 +21,12 @@ the web app. Parameters required in the configuration file include:
 ```
 DEBUG = False
 MAX_CONTENT_LENGTH = 52428800
+PATH_DC_CACHE = "/tmp/richcontext"
 SECRET_KEY = "place some secret here"
 SEND_FILE_MAX_AGE_DEFAULT = 3000
 ```
+
+To install for Ubuntu running on a GCP instance, see `INSTALL.md`
 
 
 ## Command Line Interface
@@ -112,3 +115,4 @@ handling line breaks -- that you don't introduce bad characters.
 
 The users will each need to enter their web token into the `Configure`
 page from their browser.
+
