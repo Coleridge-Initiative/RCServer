@@ -1,0 +1,33 @@
+server {
+    listen 80;
+    #listen 443 ssl;
+
+    server_name rc.coleridgeinitiative.org;
+
+    #ssl_certificate      /home/ceteri/RCServer/app_ssl.pem;
+    #ssl_certificate_key  /home/ceteri/RCServer/app_ssl.key;
+    #ssl_session_timeout  10m;
+    #ssl_session_cache shared:SSL:10m;
+    #ssl_prefer_server_ciphers  on;
+
+    # force https-redirects
+    #if ($scheme = http) {
+    #    return 301 https://$server_name$request_uri;
+    #}
+
+    # security headers
+    #add_header Strict-Transport-Security "max-age=2592000; includeSubDomains; preload";
+    #add_header X-Frame-Options SAMEORIGIN;
+    #add_header X-Content-Type-Options nosniff;
+    #add_header X-XSS-Protection "1; mode=block";
+    #add_header Referrer-Policy "origin";
+
+    add_header Content-Security-Policy: "default-src 'self' data: cdnjs.cloudflare.com ajax.cloudflare.com";
+    add_header X-Content-Security-Policy: "default-src 'self' data: cdnjs.cloudflare.com ajax.cloudflare.com";
+    add_header X-WebKit-CSP: "default-src 'self' data: cdnjs.cloudflare.com ajax.cloudflare.com";
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/ceteri/RCServer/richcontext.sock;
+    }
+}
