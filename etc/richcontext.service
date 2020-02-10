@@ -1,0 +1,17 @@
+# /etc/systemd/system/richcontext.service
+
+[Unit]
+Description=Gunicorn instance to serve rc.coleridgeinitiative.org
+After=network.target
+
+[Service]
+User=ceteri
+Group=www-data
+WorkingDirectory=/home/ceteri/RCServer
+Environment="PATH=/home/ceteri/venv/bin"
+Environment="FLASK_CONFIG=flask.cfg"
+Environment="GOOGLE_APPLICATION_CREDENTIALS=goog_api_key.json"
+ExecStart=/home/ceteri/venv/bin/gunicorn --workers 3 --bind unix:richcontext.sock -m 007 wsgi:APP
+
+[Install]
+WantedBy=multi-user.target
