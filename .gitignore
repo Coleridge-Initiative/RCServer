@@ -3,6 +3,8 @@
 tmp.jsonld
 flask.cfg
 rc.cfg
+ssl.key
+ssl.pem
 token.txt
 nohup.out
 .ipynb_checkpoints/*

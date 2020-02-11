@@ -55,3 +55,25 @@ systemctl restart nginx
 
 exit
 ```
+
+
+## Generating an SSL certificate
+
+Based on <https://certbot.eff.org/lets-encrypt/ubuntuxenial-nginx>
+for Ubuntu 16.04
+
+```
+sudo bash
+
+# add Certbot PPA
+apt-get update
+apt-get install software-properties-common
+add-apt-repository universe
+add-apt-repository ppa:certbot/certbot
+apt-get update
+
+# get a certificate
+certbot certonly --nginx
+
+exit
+```
