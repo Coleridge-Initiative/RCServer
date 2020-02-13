@@ -266,7 +266,7 @@ class RCNetwork:
         for d in self.data.values():
             if "used" in d.view:
                 self.nxg.add_node(self.get_id(d.view["id"]))
-                self.nxg.add_edge(self.get_id(d.view["id"]), self.get_id(d.view["provider"]))
+                self.nxg.add_edge(self.get_id(d.view["id"]), self.get_id(d.view["provider"]), weight=10.0)
 
         for a in self.auth.values():
             if "used" in a.view:
@@ -280,13 +280,13 @@ class RCNetwork:
             self.nxg.add_node(self.get_id(p.view["id"]))
 
             if p.view["journal"]:
-                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(p.view["journal"]))
+                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(p.view["journal"]), weight=1.0)
 
             for d in p.view["datasets"]:
-                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(d))
+                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(d), weight=20.0)
 
             for a in p.view["authors"]:
-                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(a))
+                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(a), weight=20.0)
 
 
     @classmethod
@@ -314,10 +314,10 @@ class RCNetwork:
 
     def scale_ranks (self, scale_factor=3):
         """
-        run quantile analysis on centrality metrics, to assess the
+        run quantile analysis on centrality metrics, assessing the
         relative impact of each element in the KG
         """
-        result = nx.pagerank(self.nxg)
+        result = nx.eigenvector_centrality_numpy(self.nxg, weight="weight")
         ranks = list(result.values())
 
         quant = self.calc_quantiles(ranks, num_q=10)
