@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+	box-sizing: border-box;
+}
+
+/* the autocomplete container must be positioned relative: */
+.autocomplete {
+	position: relative;
+	display: inline-block;
+}
+
+input.search {
+	border: 1px solid transparent;
+	background-color: #f1f1f1;
+	padding: .5em;
+	font-size: 16px;
+}
+
+input.search[type=text] {
+	background-color: #f1f1f1;
+	width: 100%;
+}
+
+input.search[type=submit] {
+	background-color: DodgerBlue;
+	color: #fff;
+	cursor: pointer;
+}
+
+/* position the autocomplete items to be the same width as the container: */
+.autocomplete-items {
+	position: absolute;
+	border: 1px solid #d4d4d4;
+	border-bottom: none;
+	border-top: none;
+	z-index: 99;
+	top: 100%;
+	left: 0;
+	right: 0;
+}
+
+.autocomplete-items div {
+	padding: 10px;
+	cursor: pointer;
+	background-color: #fff; 
+	border-bottom: 1px solid #d4d4d4; 
+}
+
+/* when hovering an item: */
+.autocomplete-items div:hover {
+	background-color: #e9e9e9; 
+}
+
+/* when navigating through the items using the arrow keys: */
+.autocomplete-active {
+	background-color: DodgerBlue !important; 
+	color: #ffffff; 
+}
+
+#button-holder {
+	background-color: #f1f1f1;
+	border-top: thin solid #e5e5e5;
+	box-shadow: 1px 1px 1px 1px #e5e5e5;
+	cursor: pointer;
+	position: relative;
+	display: inline-block;
+	width: 2em;
+	text-align: center;
+}
+  
+#button-holder img {
+	padding: 0.1em;
+	width: 1.5em;
+	height: 1.5em;
+}
+</style>
+
+</head>
+<body>
+
+<form
+ id="query"
+ autocomplete="off"
+>
+  <div class="autocomplete" style="width:300px;">
+    <input id="entity" class="search" type="text" name="entity" placeholder="search...">
+  </div>
+  <div id="button-holder">
+    <img src="/magnify.svg"/>
+  </div>
+</form>
+
+<script>
+{% include "script.js" %}
+</script>
+
+</body>
+</html>
