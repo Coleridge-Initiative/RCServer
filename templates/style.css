@@ -135,3 +135,58 @@ a:active {
 	text-decoration: underline;
 	font-weight: bold;
 }
+
+
+/* autocomplete container must be positioned relative: */
+.autocomplete {
+	position: relative;
+	display: inline-block;
+}
+
+input.search {
+	border: 1px solid transparent;
+	background-color: #f1f1f1;
+	padding: .5em;
+	font-size: 16px;
+}
+
+input.search[type=text] {
+	background-color: #f1f1f1;
+	width: 100%;
+}
+
+input.search[type=submit] {
+	background-color: DodgerBlue;
+	color: #fff;
+	cursor: pointer;
+}
+
+/* position the autocomplete items to be the same width as the container: */
+.autocomplete-items {
+	position: absolute;
+	border: 1px solid #d4d4d4;
+	border-bottom: none;
+	border-top: none;
+	z-index: 99;
+	top: 100%;
+	left: 0;
+	right: 0;
+}
+
+.autocomplete-items div {
+	padding: 10px;
+	cursor: pointer;
+	background-color: #fff; 
+	border-bottom: 1px solid #d4d4d4; 
+}
+
+/* when hovering over an item */
+.autocomplete-items div:hover {
+	background-color: #e9e9e9; 
+}
+
+/* when navigating through items using arrow keys */
+.autocomplete-active {
+	background-color: DodgerBlue !important; 
+	color: #ffffff; 
+}

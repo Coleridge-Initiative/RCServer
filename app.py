@@ -179,6 +179,60 @@ class RCServerApp (Flask):
     ######################################################################
     ## support for API calls to query the KG
 
+    def get_entity_phrases (self):
+        """
+        get the phrases used for autocompletion
+        """
+        response = []
+        status = HTTPStatus.OK.value
+
+        for id, entity in self.net.prov.items():
+            if "used" in entity.view:
+                response.append({
+                        "text": entity.view["title"],
+                        "kind": "provider"
+                        })
+
+        for id, entity in self.net.data.items():
+            if "used" in entity.view:
+                response.append({
+                        "text": entity.view["title"],
+                        "kind": "provider"
+                        })
+
+        for id, entity in self.net.jour.items():
+            if "used" in entity.view:
+                response.append({
+                        "text": entity.view["title"],
+                        "kind": "provider"
+                        })
+
+        return response, status
+
+
+    def get_entity_links (self, index):
+        """
+        render HTML for the link viewer for the entity referenced by
+        `index`
+        """
+        html = None
+        status = HTTPStatus.BAD_REQUEST.value
+
+        try:
+            id = int(index)
+        except:
+            id = -1
+
+        if id >= 0 and id < len(self.net.id_list):
+            uuid = self.net.id_list[id]
+
+            if uuid in self.links:
+                html = self.links[uuid]
+                status = HTTPStatus.OK.value
+
+        return html, status
+
+
     def extract_query_home (self, request):
         """
         extract and validate the query parameters from an HTTP request
@@ -250,29 +304,6 @@ class RCServerApp (Flask):
             status = HTTPStatus.BAD_REQUEST.value
 
         return response, status
-
-
-    def get_entity_links (self, index):
-        """
-        render HTML for the link viewer for the entity referenced by
-        `index`
-        """
-        html = None
-        status = HTTPStatus.BAD_REQUEST.value
-
-        try:
-            id = int(index)
-        except:
-            id = -1
-
-        if id >= 0 and id < len(self.net.id_list):
-            uuid = self.net.id_list[id]
-
-            if uuid in self.links:
-                html = self.links[uuid]
-                status = HTTPStatus.OK.value
-
-        return html, status
 
 
 APP = RCServerApp(__name__)
@@ -369,9 +400,18 @@ def conf_page ():
     return render_template("conf.html", token=token)
 
 
-## CSS, JavaScript, etc.
+@APP.route("/test")
+def test_page ():
+    """
+    route reserved for testing
+    """
+    return render_template("test.html")
+
+
+## CSS, JavaScript, images, etc.
 @APP.route("/css/pure-min.css")
 @APP.route("/css/grids-responsive-min.css")
+@APP.route("/magnify.svg")
 ## plus other well-known routes
 @APP.route("/favicon.png")
 @APP.route("/apple-touch-icon.png")
@@ -408,6 +448,26 @@ SWAGGER = Swagger(APP, template=API_TEMPLATE)
 
 ######################################################################
 ## API routes
+
+@CACHE.cached(timeout=3000)
+@APP.route("/api/v1/phrases", methods=["GET"])
+def api_entity_phrases ():
+    """
+    get the list of entity phrases for autocompletion
+    ---
+    tags:
+      - knowledge_graph
+    description: 'get the entity phrases used for autocompletion'
+    produces:
+      - application/json
+    responses:
+      '200':
+        description: phrases used for autocompletion
+    """
+    update_session()
+    response, status = APP.get_entity_phrases()
+    return jsonify(response), status
+
 
 @CACHE.cached(timeout=3000)
 @APP.route("/api/v1/query/<radius>/<entity>", methods=["GET"])

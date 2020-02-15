@@ -1,32 +1,47 @@
 <form
  id="query"
  class="pure-form"
+ autocomplete="off"
 >
 <fieldset>
-<strong>
-<label for="entity">entity:</label>
-</strong>
+<table>
+  <tr>
+    <td style="width:25em;">
+<div class="autocomplete" style="width:24em;">
 <input
  name="entity"
+ class="search"
  type="text"
- value="IRI Infoscan"
- style="width: 20em;"
+ placeholder="search..."
+ title="graph entity to use as the focus of a search"
 />
-&nbsp;
+</div>
+    </td>
+    <td style="width:3.75em;">
 <strong>
 <label for="radius">radius:</label>
 </strong>
+    </td>
+    <td style="width:2.5em;">
 <input
  name="radius"
  type="text"
  value="2"
- style="width: 2em;"
+ style="width:2em;"
+ title="radius of the graph neighborhood to search"
 />
-&nbsp;
-<button
- type="button"
- class="pure-button pure-button-primary"
+    </td>
+    <td style="width:4em;">
+<input
+ type="image"
+ alt="query"
+ src="/magnify.svg"
+ style="width:1.5em; height:1.5em; padding:.2em; border:1px solid gray; margin-left:1em;"
  onclick="run_query_form()"
->query</button>
+ title="click to submit query"
+/>
+    </td>
+  </tr>
+</table>
 </fieldset>
 </form>
