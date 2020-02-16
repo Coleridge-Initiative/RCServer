@@ -6,7 +6,7 @@ var cache_token = "";
 
 function fetch_graph_html () {
     const url = `/graph/${cache_token}`;
-    const html = `<iframe id="f" name="f" src="${url}" frameborder="0" scrolling="no"></iframe>`;
+    const html = `<iframe id="f" name="f" src="${url}" frameborder="0" scrolling="no" tabindex="-1"></iframe>`;
     const view = document.getElementById("view_graph");
     view.innerHTML = html;
 };
@@ -51,7 +51,8 @@ function enum_hood (entity_list, neighbor_name) {
 
 	if (shown) {
 	    var li_elem = document.createElement("li");
-	    li_elem.innerHTML = `<a href="#" title="${title}" onclick="get_links(${entity})">${label}</a>`;
+	    var html = `<a href="#" title="${title}" tabindex="-1" onclick="get_links(${entity})">${label}</a>`;
+	    li_elem.innerHTML = html;
 	    ul_elem.appendChild(li_elem);
 	};
     };

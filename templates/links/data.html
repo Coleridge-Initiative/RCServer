@@ -4,6 +4,7 @@
 <a
  href="{{ url }}"
  target="_blank"
+ tabindex="-1"
 >{{ title }}</a>
 {% else %}
 <strong>{{ title }}</strong>
@@ -14,6 +15,7 @@
 <em><a
  href="#"
  onclick="get_links({{ provider[0] }})"
+ tabindex="-1"
 >{{ provider[1] }}</a></em>
 </p>
 
@@ -30,6 +32,7 @@ rank:
 <li><a
  href="#"
  onclick="get_links({{ publ[0] }})"
+ tabindex="-1"
 >{{ publ[1] }}</a></li>
 {% endfor %}
 </ul>

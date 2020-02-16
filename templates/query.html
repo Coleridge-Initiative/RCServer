@@ -14,6 +14,7 @@
  type="text"
  placeholder="search..."
  title="graph entity to use as the focus of a search"
+ onclick="document.execCommand('selectall', null, false);"
 />
 </div>
     </td>
@@ -29,6 +30,7 @@
  value="2"
  style="width:2em;"
  title="radius of the graph neighborhood to search"
+ onclick="document.execCommand('selectall', null, false);"
 />
     </td>
     <td style="width:4em;">
@@ -36,8 +38,8 @@
  type="image"
  alt="query"
  src="/magnify.svg"
- style="width:1.5em; height:1.5em; padding:.2em; border:1px solid gray; margin-left:1em;"
- onclick="run_query_form()"
+ style="width:1.5em; height:1.5em; padding:.2em; border:1px solid gray; border-radius:10px; margin-left:1em;"
+ onclick="run_query_form();"
  title="click to submit query"
 />
     </td>
