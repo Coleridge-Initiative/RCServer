@@ -4,6 +4,7 @@
 <a
  href="{{ url }}"
  target="_blank"
+ tabindex="-1"
 >{{ title }}</a>
 {% else %}
 <strong>{{ title }}</strong>
@@ -29,6 +30,7 @@ ror:
 <li><a
  href="#"
  onclick="get_links({{ data[0] }})"
+ tabindex="-1"
 >{{ data[1] }}</a></li>
 {% endfor %}
 </ul>

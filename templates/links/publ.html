@@ -4,6 +4,7 @@
 <a
  href="{{ url }}"
  target="_blank"
+ tabindex="-1"
 >{{ title }}</a>
 {% else %}
 <strong>{{ title }}</strong>
@@ -15,6 +16,7 @@
 <em><a
  href="#"
  onclick="get_links({{ journal[0] }})"
+ tabindex="-1"
 >{{ journal[1] }}</a></em>
 </p>
 {% endif %}
@@ -36,6 +38,7 @@ open access:
 <a
  href="{{ pdf }}"
  target="_blank"
+ tabindex="-1"
 >{{ pdf }}</a>
 </li>
 {% endif %}
@@ -52,6 +55,7 @@ open access:
 <a
  href="#"
  onclick="get_links({{ auth[0] }})"
+ tabindex="-1"
 >{{ auth[1] }}</a></li>
 {% endfor %}
 </ul>
@@ -62,6 +66,7 @@ open access:
 <li><a
  href="#"
  onclick="get_links({{ data[0] }})"
+ tabindex="-1"
 >{{ data[1] }}</a></li>
 {% endfor %}
 </ul>
