@@ -44,6 +44,10 @@ open access:
 {% endif %}
 </ul>
 
+{% if abstract is not none %}
+<blockquote>{{ abstract }}</blockquote>
+{% endif %}
+
 <p>authors:</p>
 <ul>
 {% for auth in auth_list %}

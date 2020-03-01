@@ -54,12 +54,12 @@ gunicorn -w 4 -b 127.0.0.1:5000 wsgi:APP
 To launch with the full knowledge graph, first download the latest
 JSON-LD file for the graph from:
 
-  - <https://storage.googleapis.com/rich-context/tmp.jsonld>
+  - <https://storage.googleapis.com/rich-context/full.jsonld>
 
 Next, pre-compute the links for the KG:
 
 ```
-python app.py --pre true --corpus tmp.jsonld 
+python app.py --pre true --corpus full.jsonld
 ```
 
 That rewrites the `precomp.json` file, which the web app loads to

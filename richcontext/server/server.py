@@ -230,6 +230,12 @@ class RCNetwork:
                     else:
                         self.jour[jour_id].view["used"] = True
 
+                # add abstract
+                if "cito:description" in elem:
+                    abstract = elem["cito:description"]["@value"]
+                else:
+                    abstract = ""
+
                 # open access PDF, if any
                 if "openAccess" in elem:
                     pdf = elem["openAccess"]["@value"]
@@ -243,6 +249,7 @@ class RCNetwork:
                         "doi": doi,
                         "pdf": pdf,
                         "journal": jour_id,
+                        "abstract": abstract,
                         "datasets": data_list,
                         "authors": auth_list
                         },
@@ -611,6 +618,11 @@ class RCNetwork:
                 url = p.view["doi"]
                 doi = p.view["doi"].replace("https://doi.org/", "")
 
+            if "abstract" not in p.view or len(p.view["abstract"]) < 1:
+                abstract = None
+            else:
+                abstract = p.view["abstract"]
+
             links[p.view["id"]] = self.render_template(
                 publ_template, 
                 uuid=p.view["id"],
@@ -620,6 +632,7 @@ class RCNetwork:
                 doi=doi,
                 pdf=p.view["pdf"],
                 journal=journal,
+                abstract=abstract,
                 auth_list=auth_list,
                 data_list=sorted(data_list, key=lambda x: x[2], reverse=True)
                 )
@@ -753,7 +766,7 @@ class RCNetwork:
 def main ():
     # build a graph from the JSON-LD corpus
     net = RCNetwork()
-    net.parse_corpus(Path("tmp.jsonld"))
+    net.parse_corpus(Path("full.jsonld"))
 
     # rank and scale each entity
     net.build_analytics_graph()

@@ -1,12 +1,13 @@
 # Configuration, log files, reports, and other state
 
-tmp.jsonld
+full.jsonld
 flask.cfg
 rc.cfg
 ssl.key
 ssl.pem
 token.txt
 nohup.out
+.idea
 .ipynb_checkpoints/*
 .DS_Store
 *~
