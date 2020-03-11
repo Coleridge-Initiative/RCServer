@@ -1,0 +1,22 @@
+<p><em>{{ uuid }}</em></p>
+<p>
+<strong>{{ title }}</strong>
+</p>
+
+<ul>
+<li>
+rank:
+<strong>{{ rank }}</strong>
+</li>
+</ul>
+
+<p>publications:</p>
+<ul>
+{% for publ in publ_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ publ[0] }})"
+ tabindex="-1"
+>{{ publ[1] }}</a></li>
+{% endfor %}
+</ul>

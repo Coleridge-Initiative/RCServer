@@ -34,10 +34,25 @@
             }
         },
         {
+          "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#topic-055efac7ada9045dfd3c",
+          "@type": "Topic",
+          "dct:title": {
+            "@value": "tobacco smoke"
+          }
+        },
+        {
             "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#publication-710993be04f336ea1734",
             "@type": "ResearchPublication",
             "cito:citesAsDataSource": {
                 "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#dataset-cb23c2370049f4960a3a"
+            },
+            "dct:subject": [
+              {
+                "@id": "https://github.com/Coleridge-Initiative/adrf-onto/wiki/Vocabulary#topic-055efac7ada9045dfd3c"
+              }
+            ],
+            "cito:description": {
+              "@value": "Background. Lower-income families in the United States are at increased risk for food insecurity and have higher rates of tobacco use. Many retailers accepting government food assistance benefits also sell tobacco products, whose marketing promotes smoking initiation and undermines quit attempts. We examined the presence of tobacco marketing in authorized retailers in the Supplemental Nutrition Assistance Program (SNAP) and/or Special Supplemental Nutrition Program for Women, Infants, and Children (WIC), compared with nonauthorized retailers. Method. A nationally representative sample of tobacco retailers in the contiguous United States (N = 2,054) were audited for tobacco marketing in 2015. Using generalized estimating equations, we examined the association between WIC and SNAP authorization and presence of tobacco marketing, adjusted for store type and neighborhood demographics. Results. Both WIC-authorized (odds ratio [OR] 1.7, 95% confidence interval [CI] [1.1, 2.4]) and SNAP-authorized retailers (OR 2.3, 95% CI [1.7, 3.1]) had greater odds of displaying interior tobacco price promotions, compared with stores that were not WIC/SNAP authorized. SNAP-authorized stores (compared with nonauthorized) had almost 3 times greater odds of displaying interior tobacco advertisements (OR 2.9, 95% CI [1.9, 4.5]), while WIC-authorized retailers had 80% lower odds of displaying exterior tobacco advertisements (OR 0.2, 95% CI [0.1, 0.3]). Conclusion. Millions of lower-income American families may be disproportionately exposed to tobacco marketing at food retailers. Federal, state, and local policies could create healthier retail environments by restricting the marketing and availability of tobacco products and increasing promotions and access to healthy food options."
             },
             "dct:creator": [
                 {

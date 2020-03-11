@@ -74,3 +74,14 @@ open access:
 >{{ data[1] }}</a></li>
 {% endfor %}
 </ul>
+
+<p>topics:</p>
+<ul>
+{% for topi in topi_list %}
+<li><a
+ href="#"
+ onclick="get_links({{ topi[0] }})"
+ tabindex="-1"
+>{{ topi[1] }}</a></li>
+{% endfor %}
+</ul>
