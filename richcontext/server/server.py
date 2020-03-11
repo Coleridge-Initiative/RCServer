@@ -21,9 +21,10 @@ class RCNeighbors:
     def __init__ (self):
         self.prov = []
         self.data = []
-        self.auth = []
-        self.jour = []
         self.publ = []
+        self.jour = []
+        self.auth = []
+        self.topi = []
 
 
     def serialize (self, t0, cache_token):
@@ -34,8 +35,9 @@ class RCNeighbors:
             "prov": sorted(self.prov, key=lambda x: x[1], reverse=True),
             "data": sorted(self.data, key=lambda x: x[1], reverse=True),
             "publ": sorted(self.publ, key=lambda x: x[1], reverse=True),
-            "auth": sorted(self.auth, key=lambda x: x[1], reverse=True),
             "jour": sorted(self.jour, key=lambda x: x[1], reverse=True),
+            "auth": sorted(self.auth, key=lambda x: x[1], reverse=True),
+            "topi": sorted(self.topi, key=lambda x: x[1], reverse=True),
             "toke": cache_token,
             "time": "{:.2f}".format((time.time() - t0) * 1000.0)
             }
@@ -61,9 +63,10 @@ class RCNetwork:
 
         self.prov = {}
         self.data = {}
+        self.publ = {}
         self.jour = {}
         self.auth = {}
-        self.publ = {}
+        self.topi = {}
 
 
     def get_id (self, id):
@@ -181,6 +184,17 @@ class RCNetwork:
                     elem=elem
                     )
 
+        # topics
+        for id, kind, title, elem in entities:
+            if kind == "Topic":
+                self.topi[id] = RCNetworkNode(
+                    view={
+                        "id": id,
+                        "title": title
+                        },
+                    elem=elem
+                    )
+
         # publications
         for id, kind, title, elem in entities:
             if kind == "ResearchPublication":
@@ -188,6 +202,8 @@ class RCNetwork:
                 data_list = []
                 l = elem["cito:citesAsDataSource"]
 
+                # if there's only one element, JSON-LD will link
+                # directly rather than enclose within a list
                 if isinstance(l, dict):
                     l = [l]
             
@@ -207,6 +223,7 @@ class RCNetwork:
                 else:
                     l = []
 
+                # ibid.
                 if isinstance(l, dict):
                     l = [l]
 
@@ -214,6 +231,23 @@ class RCNetwork:
                     auth_id = a["@id"].split("#")[1]
                     self.auth[auth_id].view["used"] = True
                     auth_list.append(auth_id)
+
+                # link the topics
+                topi_list = []
+
+                if "dct:subject" in elem:
+                    l = elem["dct:subject"]
+                else:
+                    l = []
+
+                # ibid.
+                if isinstance(l, dict):
+                    l = [l]
+
+                for t in l:
+                    topi_id = t["@id"].split("#")[1]
+                    self.topi[topi_id].view["used"] = True
+                    topi_list.append(topi_id)
 
                 # add DOI
                 if "dct:identifier" in elem:
@@ -251,7 +285,8 @@ class RCNetwork:
                         "journal": jour_id,
                         "abstract": abstract,
                         "datasets": data_list,
-                        "authors": auth_list
+                        "authors": auth_list,
+                        "topics": topi_list
                         },
                     elem=elem
                     )
@@ -283,6 +318,10 @@ class RCNetwork:
             if "used" in j.view:
                 self.nxg.add_node(self.get_id(j.view["id"]))
 
+        for t in self.topi.values():
+            if "used" in t.view:
+                self.nxg.add_node(self.get_id(t.view["id"]))
+
         for p in self.publ.values():
             self.nxg.add_node(self.get_id(p.view["id"]))
 
@@ -294,6 +333,9 @@ class RCNetwork:
 
             for a in p.view["authors"]:
                 self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(a), weight=20.0)
+
+            for t in p.view["topics"]:
+                self.nxg.add_edge(self.get_id(p.view["id"]), self.get_id(t), weight=10.0)
 
 
     @classmethod
@@ -371,9 +413,10 @@ class RCNetwork:
 
             [ p.view for p in self.prov.values() ],
             [ d.view for d in self.data.values() ],
+            [ p.view for p in self.publ.values() ],
             [ j.view for j in self.jour.values() ],
             [ a.view for a in self.auth.values() ],
-            [ p.view for p in self.publ.values() ]
+            [ t.view for t in self.topi.values() ]
             ]
 
         with codecs.open(path, "wb", encoding="utf8") as f:
@@ -387,7 +430,7 @@ class RCNetwork:
         """
         with codecs.open(path, "r", encoding="utf8") as f:
             view = json.load(f)
-            g, links, id_list, labels, scale, prov, data, jour, auth, publ = view
+            g, links, id_list, labels, scale, prov, data, publ, jour, auth, topi = view
 
             # deserialize the graph metadata
             self.nxg = nx.readwrite.json_graph.node_link_graph(g[0])
@@ -406,14 +449,17 @@ class RCNetwork:
             for view in data:
                 self.data[view["id"]] = RCNetworkNode(view=view)
 
+            for view in publ:
+                self.publ[view["id"]] = RCNetworkNode(view=view)
+
             for view in jour:
                 self.jour[view["id"]] = RCNetworkNode(view=view)
 
             for view in auth:
                 self.auth[view["id"]] = RCNetworkNode(view=view)
 
-            for view in publ:
-                self.publ[view["id"]] = RCNetworkNode(view=view)
+            for view in topi:
+                self.topi[view["id"]] = RCNetworkNode(view=view)
 
             return links
 
@@ -442,8 +488,9 @@ class RCNetwork:
         data_template = self.get_template(template_folder, "links/data.html")
         prov_template = self.get_template(template_folder, "links/prov.html")
         publ_template = self.get_template(template_folder, "links/publ.html")
-        auth_template = self.get_template(template_folder, "links/auth.html")
         jour_template = self.get_template(template_folder, "links/jour.html")
+        auth_template = self.get_template(template_folder, "links/auth.html")
+        topi_template = self.get_template(template_folder, "links/topi.html")
 
         links = {}
 
@@ -580,6 +627,30 @@ class RCNetwork:
                 publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
+        # topics
+        for t in self.topi.values():
+            t_id = self.get_id(t.view["id"])
+
+            if not t_id in self.scale:
+                continue
+
+            scale, impact = self.scale[t_id]
+
+            publ_list = []
+            edges = self.nxg[self.get_id(t.view["id"])]
+
+            for neighbor, attr in edges.items():
+                neighbor_scale, neighbor_impact = self.scale[neighbor]
+                publ_list.append([ neighbor, self.labels[neighbor], neighbor_scale ])
+
+            links[t.view["id"]] = self.render_template(
+                topi_template, 
+                uuid=t.view["id"],
+                title=t.view["title"],
+                rank="{:.4f}".format(impact),
+                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
+                )
+
         # publications
         for p in self.publ.values():
             p_id = self.get_id(p.view["id"])
@@ -611,6 +682,13 @@ class RCNetwork:
                 neighbor_scale, neighbor_impact = self.scale[d_id]
                 data_list.append([ d_id, self.labels[d_id], neighbor_scale ])
 
+            topi_list = []
+
+            for t in p.view["topics"]:
+                t_id = self.get_id(t)
+                neighbor_scale, neighbor_impact = self.scale[t_id]
+                topi_list.append([ t_id, self.labels[t_id], neighbor_scale ])
+
             if len(p.view["doi"]) < 1:
                 url = None
                 doi = None
@@ -634,7 +712,8 @@ class RCNetwork:
                 journal=journal,
                 abstract=abstract,
                 auth_list=auth_list,
-                data_list=sorted(data_list, key=lambda x: x[2], reverse=True)
+                data_list=sorted(data_list, key=lambda x: x[2], reverse=True),
+                topi_list=sorted(topi_list, key=lambda x: x[2], reverse=True)
                 )
 
         return links
@@ -648,6 +727,7 @@ class RCNetwork:
         use BFS to label nodes as part of a 'neighborhood' subgraph
         """
         subgraph = set([])
+        paths = {}
 
         for node_id, label in self.labels.items():
             if label == search_term:
@@ -657,10 +737,13 @@ class RCNetwork:
                 for _, neighbor in r:
                     subgraph.add(neighbor)
 
-        return subgraph
+                paths = nx.single_source_shortest_path_length(self.nxg, node_id, cutoff=radius)
+                break
+
+        return subgraph, paths
 
 
-    def extract_neighborhood (self, subgraph, search_term, html_path):
+    def extract_neighborhood (self, subgraph, paths, search_term, html_path):
         """
         extract the neighbor entities from the subgraph, while
         generating a network diagram
@@ -705,6 +788,17 @@ class RCNetwork:
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(a.view["title"], impact, a.view["orcid"])
                     g.add_node(a_id, label=a.view["title"], title=title, color="purple", size=scale)
+
+        for t in self.topi.values():
+            if "used" in t.view:
+                t_id = self.get_id(t.view["id"])
+
+                if t_id in subgraph:
+                    scale, impact = self.scale[t_id]
+                    hood.topi.append([ t_id, "{:.4f}".format(impact), t.view["title"], None, True ])
+
+                    title = "{}<br/>rank: {:.4f}".format(t.view["title"], impact)
+                    g.add_node(t_id, label=t.view["title"], title=title, color="cyan", size=scale)
 
         for j in self.jour.values():
             if "used" in j.view:
@@ -755,6 +849,12 @@ class RCNetwork:
                     if a_id in subgraph:
                         g.add_edge(p_id, a_id, color="gray")
 
+                for t in p.view["topics"]:
+                    t_id = self.get_id(t)
+            
+                    if t_id in subgraph:
+                        g.add_edge(p_id, t_id, color="gray")
+
         #g.show_buttons()
         g.write_html(html_path, notebook=False)
 
@@ -778,8 +878,8 @@ def main ():
     search_term = "IRI Infoscan"
     radius = 2
 
-    subgraph = net.get_subgraph(search_term=search_term, radius=radius)
-    hood = net.extract_neighborhood(subgraph, search_term, "corpus.html")
+    subgraph, paths = net.get_subgraph(search_term=search_term, radius=radius)
+    hood = net.extract_neighborhood(subgraph, paths, search_term, "corpus.html")
 
     print(hood.serialize(t0))
 

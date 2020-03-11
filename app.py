@@ -39,7 +39,7 @@ class RCServerApp (Flask):
     PATH_DC_CACHE = "/tmp/richcontext"	# TODO: move to flask.cfg
 
 
-    def __init__ (self, name):
+    def __init__ (self, name, no_load=False):
         """
         initialize the web app
         """
@@ -50,8 +50,8 @@ class RCServerApp (Flask):
         self.corpus_path = Path(self.DEFAULT_CORPUS)
         self.net = rc_server.RCNetwork()
 
-        self.links = self.net.deserialize()
-        print(f"{len(self.net.labels)} elements in the knowledge graph")
+        if not no_load:
+            self.links = self.net.deserialize()
 
 
     ######################################################################
@@ -275,8 +275,8 @@ class RCServerApp (Flask):
         cache_token = self.get_hash([ entity, str(radius_val) ], prefix="hood-")
         handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
 
-        subgraph = self.net.get_subgraph(search_term=entity, radius=radius_val)
-        hood = self.net.extract_neighborhood(subgraph, entity, html_path)
+        subgraph, paths = self.net.get_subgraph(search_term=entity, radius=radius_val)
+        hood = self.net.extract_neighborhood(subgraph, paths, entity, html_path)
 
         with open(html_path, "r") as f:
             html = f.read()
@@ -593,6 +593,8 @@ def main (args):
     """
     dev/test entry point
     """
+    global APP
+
     if args.token:
         # generate a list of web tokens based on an input file
         APP.generate_tokens(args.token)
@@ -600,6 +602,7 @@ def main (args):
     elif args.pre:
         # pre-compute KG links as the `precomp.json` file
         print(f"pre-computing links with: {args.corpus}")
+        APP = RCServerApp(__name__, no_load=True)
         APP.corpus_path = Path(args.corpus)
         links = APP.build_links()
         APP.net.serialize(links)

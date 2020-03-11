@@ -91,11 +91,12 @@ function run_query (entity, radius) {
 	    const obj = xhr.response;
 	    cache_token = obj.toke;
 
-	    enum_hood(obj.auth, "neighbor-auth");
+	    enum_hood(obj.prov, "neighbor-prov");
+	    enum_hood(obj.data, "neighbor-data");
 	    enum_hood(obj.publ, "neighbor-publ");
 	    enum_hood(obj.jour, "neighbor-jour");
-	    enum_hood(obj.data, "neighbor-data");
-	    enum_hood(obj.prov, "neighbor-prov");
+	    enum_hood(obj.auth, "neighbor-auth");
+	    enum_hood(obj.topi, "neighbor-topi");
 
 	    fetch_graph_html();
 	    document.body.style.cursor = "default";
