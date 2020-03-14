@@ -19,6 +19,7 @@ import hashlib
 import json
 import jwt
 import os
+import pandas as pd
 import string
 import sys
 import traceback
@@ -584,6 +585,49 @@ def fetch_graph_html (cache_token):
     update_session()
     response, status = APP.fetch_graph(cache_token)
     return response, status
+
+
+@CACHE.cached(timeout=3000)
+@APP.route("/download/<index>", methods=["GET"])
+def download_links (index):
+    """
+    fetch the links for a given entity
+    """
+    update_session()
+
+    if index not in APP.net.data:
+        response = "there is no entity with that UUID in the graph"
+        status = HTTPStatus.BAD_REQUEST.value
+        return response, status
+
+    else:
+        dataset = APP.net.data[index].view["title"]
+        l = []
+
+        for id, node in APP.net.publ.items():
+            if index in node.view["datasets"]:
+                jour_uuid = node.view["journal"]
+
+                l.append([
+                        dataset,
+                        node.view["title"],
+                        APP.net.jour[jour_uuid].view["title"],
+                        node.view["doi"],
+                        node.view["abstract"]
+                        ])
+
+        df = pd.DataFrame(l, columns=["dataset", "publication", "journal", "url", "abstract"])
+        print(df.to_csv())
+
+        # https://stackoverflow.com/questions/38634862/use-flask-to-convert-a-pandas-dataframe-to-csv-and-serve-a-download
+        status = HTTPStatus.OK.value
+        filename = "export.csv"
+
+        response = make_response(df.to_csv())
+        response.headers["Content-Type"] = "text/csv"
+        response.headers["Content-Disposition"] = ("attachment; filename=%s" % filename)
+
+        return response, status
 
 
 ######################################################################
