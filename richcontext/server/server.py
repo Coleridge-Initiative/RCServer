@@ -719,6 +719,37 @@ class RCNetwork:
         return links
 
 
+    def download_links (self, uuid):
+        """
+        download links for the given dataset ID
+        """
+        dataset = self.data[uuid].view["title"]
+        l = []
+
+        for id, node in self.publ.items():
+            if uuid in node.view["datasets"]:
+                jour_uuid = node.view["journal"]
+
+                if jour_uuid in self.jour:
+                    jour_title = self.jour[jour_uuid].view["title"]
+                else:
+                    jour_title = ""
+
+                l.append([
+                        dataset,
+                        node.view["title"],
+                        jour_title,
+                        node.view["doi"],
+                        node.view["abstract"]
+                        ])
+
+        df = pd.DataFrame(l, columns=["dataset", "publication", "journal", "url", "abstract"])
+        data_rows = df.to_csv()
+        data_name = dataset.replace(" ", "")[:8].upper()
+
+        return data_rows, data_name
+
+
     ######################################################################
     ## neighborhoods
 
