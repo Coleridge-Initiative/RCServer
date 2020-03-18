@@ -32,12 +32,12 @@ class RCNeighbors:
         serialize this subgraph/neighborhood as JSON
         """
         view = {
-            "prov": sorted(self.prov, key=lambda x: x[1], reverse=True),
-            "data": sorted(self.data, key=lambda x: x[1], reverse=True),
-            "publ": sorted(self.publ, key=lambda x: x[1], reverse=True),
-            "jour": sorted(self.jour, key=lambda x: x[1], reverse=True),
-            "auth": sorted(self.auth, key=lambda x: x[1], reverse=True),
-            "topi": sorted(self.topi, key=lambda x: x[1], reverse=True),
+            "prov": sorted(self.prov, key=lambda x: x[1]),
+            "data": sorted(self.data, key=lambda x: x[1]),
+            "publ": sorted(self.publ, key=lambda x: x[1]),
+            "jour": sorted(self.jour, key=lambda x: x[1]),
+            "auth": sorted(self.auth, key=lambda x: x[1]),
+            "topi": sorted(self.topi, key=lambda x: x[1]),
             "toke": cache_token,
             "time": "{:.2f}".format((time.time() - t0) * 1000.0)
             }
@@ -789,7 +789,8 @@ class RCNetwork:
         
                 if p_id in subgraph:
                     scale, impact = self.scale[p_id]
-                    hood.prov.append([ p_id, "{:.4f}".format(impact), p.view["title"], p.view["ror"], True ])
+                    rank = (paths[p_id], 1.0 - impact)
+                    hood.prov.append([ p_id, rank, "{:.4f}".format(impact), p.view["title"], p.view["ror"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(p.view["title"], impact, p.view["ror"])
                     g.add_node(p_id, label=p.view["title"], title=title, color="orange", size=scale)
@@ -801,7 +802,8 @@ class RCNetwork:
                 if d_id in subgraph:
                     p_id = self.get_id(d.view["provider"])
                     scale, impact = self.scale[d_id]
-                    hood.data.append([ d_id, "{:.4f}".format(impact), d.view["title"], self.labels[p_id], True ])
+                    rank = (paths[d_id], 1.0 - impact)
+                    hood.data.append([ d_id, rank, "{:.4f}".format(impact), d.view["title"], self.labels[p_id], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d.view["title"], impact, self.labels[p_id])
                     g.add_node(d_id, label=d.view["title"], title=title, color="red", size=scale)
@@ -815,7 +817,8 @@ class RCNetwork:
 
                 if a_id in subgraph:
                     scale, impact = self.scale[a_id]
-                    hood.auth.append([ a_id, "{:.4f}".format(impact), a.view["title"], a.view["orcid"], True ])
+                    rank = (paths[a_id], 1.0 - impact)
+                    hood.auth.append([ a_id, rank, "{:.4f}".format(impact), a.view["title"], a.view["orcid"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(a.view["title"], impact, a.view["orcid"])
                     g.add_node(a_id, label=a.view["title"], title=title, color="purple", size=scale)
@@ -826,7 +829,8 @@ class RCNetwork:
 
                 if t_id in subgraph:
                     scale, impact = self.scale[t_id]
-                    hood.topi.append([ t_id, "{:.4f}".format(impact), t.view["title"], None, True ])
+                    rank = (paths[t_id], 1.0 - impact)
+                    hood.topi.append([ t_id, rank, "{:.4f}".format(impact), t.view["title"], None, True ])
 
                     title = "{}<br/>rank: {:.4f}".format(t.view["title"], impact)
                     g.add_node(t_id, label=t.view["title"], title=title, color="cyan", size=scale)
@@ -842,7 +846,8 @@ class RCNetwork:
                         shown = True
 
                     scale, impact = self.scale[j_id]
-                    hood.jour.append([ j_id, "{:.4f}".format(impact), j.view["title"], j.view["issn"], shown ])
+                    rank = (paths[j_id], 1.0 - impact)
+                    hood.jour.append([ j_id, rank, "{:.4f}".format(impact), j.view["title"], j.view["issn"], shown ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(j.view["title"], impact, j.view["issn"])
                     g.add_node(j_id, label=j.view["title"], title=title, color="green", size=scale)
@@ -857,7 +862,8 @@ class RCNetwork:
                     abbrev_title = p.view["title"]
 
                 scale, impact = self.scale[p_id]
-                hood.publ.append([ p_id, "{:.4f}".format(impact), abbrev_title, p.view["doi"], True ])
+                rank = (paths[p_id], 1.0 - impact)
+                hood.publ.append([ p_id, rank, "{:.4f}".format(impact), abbrev_title, p.view["doi"], True ])
 
                 title = "{}<br/>rank: {:.4f}<br/>{}".format(p.view["title"], impact, p.view["doi"])
                 g.add_node(p_id, label=p.view["title"], title=title, color="blue", size=scale)
