@@ -44,10 +44,11 @@ function enum_hood (entity_list, neighbor_name) {
 
     for (i = 0; i < entity_list.length; i++) { 
 	var entity = entity_list[i][0];
-	var impact = entity_list[i][1];
-	var label = entity_list[i][2];
-	var title = entity_list[i][3];
-	var shown = entity_list[i][4];
+	var rank = entity_list[i][1];
+	var impact = entity_list[i][2];
+	var label = entity_list[i][3];
+	var title = entity_list[i][4];
+	var shown = entity_list[i][5];
 
 	if (shown) {
 	    var li_elem = document.createElement("li");
