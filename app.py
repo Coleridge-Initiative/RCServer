@@ -275,8 +275,8 @@ class RCServerApp (Flask):
         cache_token = self.get_hash([ entity, str(radius_val) ], prefix="hood-")
         handle, html_path = tempfile.mkstemp(suffix=".html", prefix="rc_hood", dir="/tmp")
 
-        subgraph, paths = self.net.get_subgraph(search_term=entity, radius=radius_val)
-        hood = self.net.extract_neighborhood(subgraph, paths, entity, html_path)
+        subgraph, paths, node_id = self.net.get_subgraph(entity, radius_val)
+        hood = self.net.extract_neighborhood(radius_val, subgraph, paths, node_id, html_path)
 
         with open(html_path, "r") as f:
             html = f.read()
@@ -576,30 +576,36 @@ def conf_post_web_token ():
 
 
 @CACHE.cached(timeout=3000)
-@APP.route("/graph/<cache_token>", methods=["GET"])
-def fetch_graph_html (cache_token):
+@APP.route("/api/v1/download/<entity>", methods=["GET"])
+def api_download_links (entity):
     """
-    fetch the HTML to render a cached network diagram 
+    download the links for a given entity
+    ---
+    tags:
+      - knowledge_graph
+    description: 'initiate a download of the links for a given entity'
+    parameters:
+      - name: entity
+        in: path
+        required: true
+        type: string
+        description: entity UUID
+    produces:
+      - application/json
+    responses:
+      '200':
+        description: initiates an browser-based download
+      '400':
+        description: bad request; is the entity UUID correct?
     """
     update_session()
-    response, status = APP.fetch_graph(cache_token)
-    return response, status
 
-
-@CACHE.cached(timeout=3000)
-@APP.route("/download/<index>", methods=["GET"])
-def download_links (index):
-    """
-    fetch the links for a given entity
-    """
-    update_session()
-
-    if index not in APP.net.data:
+    if entity not in APP.net.data:
         response = "there is no entity with that UUID in the graph"
         status = HTTPStatus.BAD_REQUEST.value
 
     else:
-        data_rows, data_name = APP.net.download_links(index)
+        data_rows, data_name = APP.net.download_links(entity)
         filename = "export-{}.csv".format(data_name)
 
         response = make_response(data_rows)
@@ -608,6 +614,17 @@ def download_links (index):
 
         status = HTTPStatus.OK.value
 
+    return response, status
+
+
+@CACHE.cached(timeout=3000)
+@APP.route("/graph/<cache_token>", methods=["GET"])
+def fetch_graph_html (cache_token):
+    """
+    fetch the HTML to render a cached network diagram 
+    """
+    update_session()
+    response, status = APP.fetch_graph(cache_token)
     return response, status
 
 

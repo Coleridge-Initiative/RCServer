@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from collections import defaultdict
 from css_html_js_minify import html_minify
+from functools import lru_cache
 from jinja2 import Environment, FileSystemLoader
 from operator import itemgetter
 from pathlib import Path
 from pyvis.network import Network
-from scipy.stats import percentileofscore
 import codecs
 import json
 import networkx as nx
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 import sys
 import time
 import traceback
@@ -32,12 +34,12 @@ class RCNeighbors:
         serialize this subgraph/neighborhood as JSON
         """
         view = {
-            "prov": sorted(self.prov, key=lambda x: x[1]),
-            "data": sorted(self.data, key=lambda x: x[1]),
-            "publ": sorted(self.publ, key=lambda x: x[1]),
-            "jour": sorted(self.jour, key=lambda x: x[1]),
-            "auth": sorted(self.auth, key=lambda x: x[1]),
-            "topi": sorted(self.topi, key=lambda x: x[1]),
+            "prov": sorted(self.prov, key=lambda x: x[1], reverse=True),
+            "data": sorted(self.data, key=lambda x: x[1], reverse=True),
+            "publ": sorted(self.publ, key=lambda x: x[1], reverse=True),
+            "jour": sorted(self.jour, key=lambda x: x[1], reverse=True),
+            "auth": sorted(self.auth, key=lambda x: x[1], reverse=True),
+            "topi": sorted(self.topi, key=lambda x: x[1], reverse=True),
             "toke": cache_token,
             "time": "{:.2f}".format((time.time() - t0) * 1000.0)
             }
@@ -53,6 +55,7 @@ class RCNetworkNode:
 
 class RCNetwork:
     MAX_TITLE_LEN = 60
+    Z_975 = stats.norm.ppf(q=0.975)
 
     def __init__ (self):
         self.id_list = []
@@ -295,6 +298,48 @@ class RCNetwork:
     ######################################################################
     ## graph analytics
 
+    @classmethod
+    @lru_cache()
+    def point_estimate (cls, x, n):
+        return (float(x) + cls.Z_975) / (float(n) + 2.0 * cls.Z_975)
+
+
+    def propagate_pdf (self, entity_class, entity_kind):
+        """
+        propagate probability distribution functions across the graph,
+        for conditional probabilities related to datasets
+        """
+        trials = defaultdict(int)
+        counts = defaultdict(dict)
+
+        for p in self.publ.values():
+            if p.view[entity_kind]:
+                coll = p.view[entity_kind]
+
+                if isinstance(coll, str):
+                    coll = [coll]
+
+                for e in coll:
+                    n = float(len(p.view["datasets"]))
+                    trials[e] += n
+
+                    for d in p.view["datasets"]:
+                        if d not in counts[e]:
+                            counts[e][d] = 1
+                        else:
+                            counts[e][d] += 1
+
+        for e in entity_class.values():
+            e_id = e.view["id"]
+            mle = {}
+
+            for d, x in counts[e_id].items():
+                pt_est = self.point_estimate(x, trials[e_id])
+                mle[self.get_id(d)] = [x, pt_est]
+
+            e.view["mle"] = mle
+
+
     def build_analytics_graph (self):
         """
         build a graph to calculate analytics
@@ -373,7 +418,7 @@ class RCNetwork:
         num_quant = len(quant)
 
         for id, rank in sorted(result.items(), key=itemgetter(1), reverse=True):
-            impact = percentileofscore(ranks, rank)
+            impact = stats.percentileofscore(ranks, rank)
             scale = (((impact / num_quant) + 5) * scale_factor)
             self.scale[id] = [int(round(scale)), impact / 100.0]
 
@@ -386,6 +431,11 @@ class RCNetwork:
         t0 = time.time()
 
         self.parse_corpus(path)
+
+        self.propagate_pdf(self.auth, "authors")
+        self.propagate_pdf(self.jour, "journal")
+        self.propagate_pdf(self.topi, "topics")
+
         self.build_analytics_graph()
         self.scale_ranks()
 
@@ -759,9 +809,11 @@ class RCNetwork:
         """
         subgraph = set([])
         paths = {}
+        the_node_id = None
 
         for node_id, label in self.labels.items():
             if label == search_term:
+                the_node_id = node_id
                 r = nx.bfs_edges(self.nxg, source=node_id, depth_limit=radius)
                 subgraph = set([node_id])
 
@@ -771,10 +823,10 @@ class RCNetwork:
                 paths = nx.single_source_shortest_path_length(self.nxg, node_id, cutoff=radius)
                 break
 
-        return subgraph, paths
+        return subgraph, paths, str(the_node_id)
 
 
-    def extract_neighborhood (self, subgraph, paths, search_term, html_path):
+    def extract_neighborhood (self, radius, subgraph, paths, node_id, html_path):
         """
         extract the neighbor entities from the subgraph, while
         generating a network diagram
@@ -789,7 +841,7 @@ class RCNetwork:
         
                 if p_id in subgraph:
                     scale, impact = self.scale[p_id]
-                    rank = (paths[p_id], 1.0 - impact)
+                    rank = (radius - paths[p_id], impact)
                     hood.prov.append([ p_id, rank, "{:.4f}".format(impact), p.view["title"], p.view["ror"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(p.view["title"], impact, p.view["ror"])
@@ -802,7 +854,7 @@ class RCNetwork:
                 if d_id in subgraph:
                     p_id = self.get_id(d.view["provider"])
                     scale, impact = self.scale[d_id]
-                    rank = (paths[d_id], 1.0 - impact)
+                    rank = (radius - paths[d_id], impact)
                     hood.data.append([ d_id, rank, "{:.4f}".format(impact), d.view["title"], self.labels[p_id], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d.view["title"], impact, self.labels[p_id])
@@ -816,8 +868,14 @@ class RCNetwork:
                 a_id = self.get_id(a.view["id"])
 
                 if a_id in subgraph:
+                    if node_id in a.view["mle"]:
+                        count, pt_est = a.view["mle"][node_id]
+                    else:
+                        count = 0
+                        pt_est = 0.0
+
                     scale, impact = self.scale[a_id]
-                    rank = (paths[a_id], 1.0 - impact)
+                    rank = (radius - paths[a_id], count, pt_est, impact)
                     hood.auth.append([ a_id, rank, "{:.4f}".format(impact), a.view["title"], a.view["orcid"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(a.view["title"], impact, a.view["orcid"])
@@ -828,8 +886,14 @@ class RCNetwork:
                 t_id = self.get_id(t.view["id"])
 
                 if t_id in subgraph:
+                    if node_id in t.view["mle"]:
+                        count, pt_est = t.view["mle"][node_id]
+                    else:
+                        count = 0
+                        pt_est = 0.0
+
                     scale, impact = self.scale[t_id]
-                    rank = (paths[t_id], 1.0 - impact)
+                    rank = (radius - paths[t_id], count, pt_est, impact)
                     hood.topi.append([ t_id, rank, "{:.4f}".format(impact), t.view["title"], None, True ])
 
                     title = "{}<br/>rank: {:.4f}".format(t.view["title"], impact)
@@ -845,8 +909,14 @@ class RCNetwork:
                     else:
                         shown = True
 
+                    if node_id in j.view["mle"]:
+                        count, pt_est = j.view["mle"][node_id]
+                    else:
+                        count = 0
+                        pt_est = 0.0
+
                     scale, impact = self.scale[j_id]
-                    rank = (paths[j_id], 1.0 - impact)
+                    rank = (radius - paths[j_id], count, pt_est, impact)
                     hood.jour.append([ j_id, rank, "{:.4f}".format(impact), j.view["title"], j.view["issn"], shown ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(j.view["title"], impact, j.view["issn"])
@@ -862,7 +932,7 @@ class RCNetwork:
                     abbrev_title = p.view["title"]
 
                 scale, impact = self.scale[p_id]
-                rank = (paths[p_id], 1.0 - impact)
+                rank = (radius - paths[p_id], impact)
                 hood.publ.append([ p_id, rank, "{:.4f}".format(impact), abbrev_title, p.view["doi"], True ])
 
                 title = "{}<br/>rank: {:.4f}<br/>{}".format(p.view["title"], impact, p.view["doi"])
@@ -915,8 +985,8 @@ def main ():
     search_term = "IRI Infoscan"
     radius = 2
 
-    subgraph, paths = net.get_subgraph(search_term=search_term, radius=radius)
-    hood = net.extract_neighborhood(subgraph, paths, search_term, "corpus.html")
+    subgraph, paths, node_id = net.get_subgraph(search_term, radius)
+    hood = net.extract_neighborhood(radius, subgraph, paths, node_id, "corpus.html")
 
     print(hood.serialize(t0))
 
