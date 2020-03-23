@@ -17,6 +17,32 @@ body {
 }
 
 
+.collapsible {
+	background-color: hsl(0, 0%, 47%);
+	color: white;
+	cursor: pointer;
+	width: 100%;
+	border: none;
+	text-align: left;
+	outline: none;
+	font-size: 0.9em;
+	padding-top: 0;
+	padding-bottom: 0;
+	margin-block-start: 0.4em;
+	margin-block-end: 0.2em;
+}
+
+.active, .collapsible:hover {
+	background-color: hsl(0, 0%, 33%);
+}
+
+.collapsible_content {
+	padding: 0 0.2em;
+	display: none;
+	overflow: hidden;
+	background-color: hsl(0, 0%, 95%);
+}
+
 .neighbor {
 	background-color: rgb(245, 245, 245);
 	border: 1px solid #ccc;
@@ -28,18 +54,11 @@ body {
 	overflow-y: auto;
 }
 
-.neighbor h3 {
-	font-size: 1em;
-	padding-top: 0;
-	padding-bottom: 0;
-	margin-block-start: 0.4em;
-	margin-block-end: 0.2em;
-}
-
 .neighbor div {
-	max-height: 9em;
+	height: 20em;
 	min-height: 1em;
 	overflow-y: auto;
+	resize: vertical;
 }
 
 .neighbor div ul {

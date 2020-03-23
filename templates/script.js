@@ -36,7 +36,7 @@ function get_links (index) {
 };
 
 
-function enum_hood (entity_list, neighbor_name) {
+function enum_hood (entity_list, neighbor_name, uncollapse) {
     const neighbor = document.getElementById(neighbor_name);
     const ul_elem = document.createElement("ul");
     neighbor.innerHTML = "";
@@ -56,6 +56,12 @@ function enum_hood (entity_list, neighbor_name) {
 	    li_elem.innerHTML = html;
 	    ul_elem.appendChild(li_elem);
 	};
+    };
+
+    if (uncollapse) {
+        neighbor.style.display = "block";
+    } else {
+        neighbor.style.display = "none";
     };
 };
 
@@ -92,13 +98,18 @@ function run_query (entity, radius) {
 	    const obj = xhr.response;
 	    cache_token = obj.toke;
 
-	    enum_hood(obj.prov, "neighbor-prov");
-	    enum_hood(obj.data, "neighbor-data");
-	    enum_hood(obj.publ, "neighbor-publ");
-	    enum_hood(obj.jour, "neighbor-jour");
-	    enum_hood(obj.auth, "neighbor-auth");
-	    enum_hood(obj.topi, "neighbor-topi");
+	    // populate the neighbor <div>'s
+	    enum_hood(obj.prov, "neighbor-prov", false);
+	    enum_hood(obj.data, "neighbor-data", false);
+	    enum_hood(obj.publ, "neighbor-publ", true);
+	    enum_hood(obj.jour, "neighbor-jour", false);
+	    enum_hood(obj.auth, "neighbor-auth", false);
+	    enum_hood(obj.topi, "neighbor-topi", false);
 
+	    // by default, show the first publication
+	    get_links(obj.publ[0][0]);
+
+	    // also load the graph
 	    fetch_graph_html();
 	    document.body.style.cursor = "default";
 	};
@@ -360,10 +371,30 @@ document.addEventListener("click", function (e) {
 };
 
 
-// the following runs as soon as the page loads...
+//////////////////////////////////////////////////////////////////////
+// collapsible content
+
+var coll = document.getElementsByClassName("collapsible");
+
+for (var i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+	    this.classList.toggle("active");
+	    var content = this.nextElementSibling;
+
+	    if (content.style.display === "block") {
+		content.style.display = "none";
+	    } else {
+		content.style.display = "block";
+	    }
+	});
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// this runs as soon as the page loads...
 
 (function () {
-    open_view("view_graph");
+    open_view("view_links");
 
     const input_elem = document.getElementsByName("entity")[0];
 

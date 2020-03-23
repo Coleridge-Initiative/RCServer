@@ -54,7 +54,7 @@ class RCNetworkNode:
 
 
 class RCNetwork:
-    MAX_TITLE_LEN = 60
+    MAX_TITLE_LEN = 100
     Z_975 = stats.norm.ppf(q=0.975)
 
     def __init__ (self):
