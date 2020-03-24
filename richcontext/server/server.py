@@ -530,31 +530,50 @@ class RCNetwork:
         return html_minify(template.render(kwargs)).replace("  ", " ").replace("> <", "><").replace(" >", ">")
 
 
-    def render_links (self, template_folder):
+    def setup_render (self, template_folder):
+        self.data_template = self.get_template(template_folder, "links/data.html")
+        self.prov_template = self.get_template(template_folder, "links/prov.html")
+        self.publ_template = self.get_template(template_folder, "links/publ.html")
+        self.jour_template = self.get_template(template_folder, "links/jour.html")
+        self.auth_template = self.get_template(template_folder, "links/auth.html")
+        self.topi_template = self.get_template(template_folder, "links/topi.html")
+
+
+    def calc_rank (self, rerank, neighbor, e):
         """
-        leverage the `nxg` graph to generate HTML to render links for
-        each entity in the knowledge graph
+        calculate a distance metric to the selected dataset 
         """
-        data_template = self.get_template(template_folder, "links/data.html")
-        prov_template = self.get_template(template_folder, "links/prov.html")
-        publ_template = self.get_template(template_folder, "links/publ.html")
-        jour_template = self.get_template(template_folder, "links/jour.html")
-        auth_template = self.get_template(template_folder, "links/auth.html")
-        topi_template = self.get_template(template_folder, "links/topi.html")
+        neighbor_scale, neighbor_impact = self.scale[neighbor]
+        rank = (0, 0, 0.0, neighbor_impact)
 
-        links = {}
+        if rerank:
+            p = self.publ[self.id_list[neighbor]]
 
-        # providers
-        for p in self.prov.values():
-            p_id = self.get_id(p.view["id"])
+            if "rank" in p.view:
+                rank = p.view["rank"]
+            else:
+                if rerank in e.view["mle"]:
+                    count, pt_est = e.view["mle"][rerank]
+                else:
+                    count = 0
+                    pt_est = 0.0
 
-            if not p_id in self.scale:
-                continue
+                rank = (0, count, pt_est, neighbor_impact)
 
+        return rank
+
+
+    def render_prov (self, p):
+        """
+        render HTML for a provider
+        """
+        html = None
+        p_id = self.get_id(p.view["id"])
+
+        if p_id in self.scale:
             scale, impact = self.scale[p_id]
-
-            data_list = []
             edges = self.nxg[self.get_id(p.view["id"])]
+            data_list = []
 
             for neighbor, attr in edges.items():
                 neighbor_scale, neighbor_impact = self.scale[neighbor]
@@ -567,8 +586,8 @@ class RCNetwork:
                 ror = p.view["ror"].replace("https://ror.org/", "")
                 url = p.view["ror"]
 
-            links[p.view["id"]] = self.render_template(
-                prov_template, 
+            html = self.render_template(
+                self.prov_template, 
                 uuid=p.view["id"],
                 title=p.view["title"],
                 rank="{:.4f}".format(impact),
@@ -577,27 +596,31 @@ class RCNetwork:
                 data_list=sorted(data_list, key=lambda x: x[2], reverse=True)
                 )
 
-        # datasets
-        for d in self.data.values():
-            d_id = self.get_id(d.view["id"])
+        return html
 
-            if not d_id in self.scale:
-                continue
+
+    def render_data (self, d):
+        """
+        render HTML for a dataset
+        """
+        html = None
+        d_id = self.get_id(d.view["id"])
+
+        if d_id in self.scale:
+            scale, impact = self.scale[d_id]
+            edges = self.nxg[self.get_id(d.view["id"])]
+            publ_list = []
 
             p_id = self.get_id(d.view["provider"])
-            scale, impact = self.scale[d_id]
-
-            publ_list = []
             seen_set = set([ p_id ])
-            edges = self.nxg[self.get_id(d.view["id"])]
 
             for neighbor, attr in edges.items():
                 if neighbor not in seen_set:
                     neighbor_scale, neighbor_impact = self.scale[neighbor]
                     publ_list.append([ neighbor, self.labels[neighbor], neighbor_impact ])
 
-            links[d.view["id"]] = self.render_template(
-                data_template, 
+            html = self.render_template(
+                self.data_template, 
                 uuid=d.view["id"],
                 title=d.view["title"],
                 rank="{:.4f}".format(impact),
@@ -606,21 +629,24 @@ class RCNetwork:
                 publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
-        # authors
-        for a in self.auth.values():
-            a_id = self.get_id(a.view["id"])
+        return html
 
-            if not a_id in self.scale:
-                continue
 
+    def render_auth (self, a, rerank=False):
+        """
+        render HTML for an author
+        """
+        html = None
+        a_id = self.get_id(a.view["id"])
+
+        if a_id in self.scale:
             scale, impact = self.scale[a_id]
-
-            publ_list = []
             edges = self.nxg[self.get_id(a.view["id"])]
+            publ_list = []
 
             for neighbor, attr in edges.items():
-                neighbor_scale, neighbor_impact = self.scale[neighbor]
-                publ_list.append([ neighbor, self.labels[neighbor], neighbor_scale ])
+                rank = self.calc_rank(rerank, neighbor, a)
+                publ_list.append([ neighbor, self.labels[neighbor], rank ])
 
             if len(a.view["orcid"]) < 1:
                 orcid = None
@@ -629,8 +655,8 @@ class RCNetwork:
                 orcid = a.view["orcid"].replace("https://orcid.org/", "")
                 url = a.view["orcid"]
 
-            links[a.view["id"]] = self.render_template(
-                auth_template, 
+            html = self.render_template(
+                self.auth_template, 
                 uuid=a.view["id"],
                 title=a.view["title"],
                 rank="{:.4f}".format(impact),
@@ -639,17 +665,20 @@ class RCNetwork:
                 publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
-        # journals
-        for j in self.jour.values():
-            j_id = self.get_id(j.view["id"])
+        return html
 
-            if not j_id in self.scale:
-                continue
 
+    def render_jour (self, j):
+        """
+        render HTML for a journal
+        """
+        html = None
+        j_id = self.get_id(j.view["id"])
+
+        if j_id in self.scale:
             scale, impact = self.scale[j_id]
-
-            publ_list = []
             edges = self.nxg[self.get_id(j.view["id"])]
+            publ_list = []
 
             for neighbor, attr in edges.items():
                 neighbor_scale, neighbor_impact = self.scale[neighbor]
@@ -667,8 +696,8 @@ class RCNetwork:
             else:
                 url = None
 
-            links[j.view["id"]] = self.render_template(
-                jour_template, 
+            html = self.render_template(
+                self.jour_template, 
                 uuid=j.view["id"],
                 title=j.view["title"],
                 rank="{:.4f}".format(impact),
@@ -677,39 +706,45 @@ class RCNetwork:
                 publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
-        # topics
-        for t in self.topi.values():
-            t_id = self.get_id(t.view["id"])
+        return html
 
-            if not t_id in self.scale:
-                continue
 
+    def render_topi (self, t):
+        """
+        render HTML for a topic
+        """
+        html = None
+        t_id = self.get_id(t.view["id"])
+
+        if t_id in self.scale:
             scale, impact = self.scale[t_id]
-
-            publ_list = []
             edges = self.nxg[self.get_id(t.view["id"])]
+            publ_list = []
 
             for neighbor, attr in edges.items():
                 neighbor_scale, neighbor_impact = self.scale[neighbor]
                 publ_list.append([ neighbor, self.labels[neighbor], neighbor_scale ])
 
-            links[t.view["id"]] = self.render_template(
-                topi_template, 
+            html = self.render_template(
+                self.topi_template, 
                 uuid=t.view["id"],
                 title=t.view["title"],
                 rank="{:.4f}".format(impact),
                 publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
                 )
 
-        # publications
-        for p in self.publ.values():
-            p_id = self.get_id(p.view["id"])
+        return html
 
-            if not p_id in self.scale:
-                continue
 
+    def render_publ (self, p):
+        """
+        render HTML for a publication
+        """
+        html = None
+        p_id = self.get_id(p.view["id"])
+
+        if p_id in self.scale:
             scale, impact = self.scale[p_id]
-
             journal = None
 
             if p.view["journal"]:
@@ -751,8 +786,8 @@ class RCNetwork:
             else:
                 abstract = p.view["abstract"]
 
-            links[p.view["id"]] = self.render_template(
-                publ_template, 
+            html = self.render_template(
+                self.publ_template, 
                 uuid=p.view["id"],
                 title=p.view["title"],
                 rank="{:.4f}".format(impact),
@@ -765,6 +800,34 @@ class RCNetwork:
                 data_list=sorted(data_list, key=lambda x: x[2], reverse=True),
                 topi_list=sorted(topi_list, key=lambda x: x[2], reverse=True)
                 )
+
+        return html
+
+
+    def render_links (self):
+        """
+        leverage the `nxg` graph to generate HTML to render links for
+        each entity in the knowledge graph
+        """
+        links = {}
+
+        for p in self.prov.values():
+            links[p.view["id"]] = self.render_prov(p)
+
+        for d in self.data.values():
+            links[d.view["id"]] = self.render_data(d)
+
+        for a in self.auth.values():
+            links[a.view["id"]] = self.render_auth(a)
+
+        for j in self.jour.values():
+            links[j.view["id"]] = self.render_jour(j)
+
+        for t in self.topi.values():
+            links[t.view["id"]] = self.render_topi(t)
+
+        for p in self.publ.values():
+            links[p.view["id"]] = self.render_publ(p)
 
         return links
 
@@ -841,7 +904,8 @@ class RCNetwork:
         
                 if p_id in subgraph:
                     scale, impact = self.scale[p_id]
-                    rank = (radius - paths[p_id], impact)
+                    rank = (radius - paths[p_id], 0, 0.0, impact)
+                    p.view["rank"] = rank
                     hood.prov.append([ p_id, rank, "{:.4f}".format(impact), p.view["title"], p.view["ror"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(p.view["title"], impact, p.view["ror"])
@@ -854,7 +918,8 @@ class RCNetwork:
                 if d_id in subgraph:
                     p_id = self.get_id(d.view["provider"])
                     scale, impact = self.scale[d_id]
-                    rank = (radius - paths[d_id], impact)
+                    rank = (radius - paths[d_id], 0, 0.0, impact)
+                    d.view["rank"] = rank
                     hood.data.append([ d_id, rank, "{:.4f}".format(impact), d.view["title"], self.labels[p_id], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>provider: {}".format(d.view["title"], impact, self.labels[p_id])
@@ -876,6 +941,7 @@ class RCNetwork:
 
                     scale, impact = self.scale[a_id]
                     rank = (radius - paths[a_id], count, pt_est, impact)
+                    a.view["rank"] = rank
                     hood.auth.append([ a_id, rank, "{:.4f}".format(impact), a.view["title"], a.view["orcid"], True ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(a.view["title"], impact, a.view["orcid"])
@@ -894,6 +960,7 @@ class RCNetwork:
 
                     scale, impact = self.scale[t_id]
                     rank = (radius - paths[t_id], count, pt_est, impact)
+                    t.view["rank"] = rank
                     hood.topi.append([ t_id, rank, "{:.4f}".format(impact), t.view["title"], None, True ])
 
                     title = "{}<br/>rank: {:.4f}".format(t.view["title"], impact)
@@ -917,6 +984,7 @@ class RCNetwork:
 
                     scale, impact = self.scale[j_id]
                     rank = (radius - paths[j_id], count, pt_est, impact)
+                    j.view["rank"] = rank
                     hood.jour.append([ j_id, rank, "{:.4f}".format(impact), j.view["title"], j.view["issn"], shown ])
 
                     title = "{}<br/>rank: {:.4f}<br/>{}".format(j.view["title"], impact, j.view["issn"])
@@ -932,7 +1000,8 @@ class RCNetwork:
                     abbrev_title = p.view["title"]
 
                 scale, impact = self.scale[p_id]
-                rank = (radius - paths[p_id], impact)
+                rank = (radius - paths[p_id], 0, 0.0, impact)
+                p.view["rank"] = rank
                 hood.publ.append([ p_id, rank, "{:.4f}".format(impact), abbrev_title, p.view["doi"], True ])
 
                 title = "{}<br/>rank: {:.4f}<br/>{}".format(p.view["title"], impact, p.view["doi"])

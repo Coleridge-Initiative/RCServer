@@ -48,7 +48,9 @@ class RCServerApp (Flask):
 
         self.disk_cache = dc.Cache(self.PATH_DC_CACHE)
         self.corpus_path = Path(self.DEFAULT_CORPUS)
+
         self.net = rc_server.RCNetwork()
+        self.net.setup_render(self.template_folder)
 
         if not no_load:
             self.links = self.net.deserialize()
@@ -80,7 +82,7 @@ class RCServerApp (Flask):
         print("{:.2f} ms corpus parse time".format(elapsed_time))
 
         t0 = time.time()
-        links = self.net.render_links(self.template_folder)
+        links = self.net.render_links()
         t1 = time.time()
 
         print("{:.2f} ms link format time".format((t1 - t0) * 1000.0))
@@ -226,8 +228,13 @@ class RCServerApp (Flask):
         if id >= 0 and id < len(self.net.id_list):
             uuid = self.net.id_list[id]
 
-            if uuid in self.links:
+            if uuid in self.net.auth:
+                html = self.net.render_auth(self.net.auth[uuid], rerank=session["last_node"])
+
+            elif uuid in self.links:
                 html = self.links[uuid]
+
+            if html:
                 status = HTTPStatus.OK.value
 
         return html, status
@@ -277,6 +284,7 @@ class RCServerApp (Flask):
 
         subgraph, paths, node_id = self.net.get_subgraph(entity, radius_val)
         hood = self.net.extract_neighborhood(radius_val, subgraph, paths, node_id, html_path)
+        session["last_node"] = node_id
 
         with open(html_path, "r") as f:
             html = f.read()
