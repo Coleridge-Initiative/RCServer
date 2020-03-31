@@ -19,7 +19,12 @@ rank:
 {% if orcid is not none %}
 <li>
 orcid:
-<strong>{{ orcid }}</strong>
+<strong>
+<a
+ href="https://orcid.org/{{ orcid }}"
+ target="_blank"
+ tabindex="-1"
+>{{ orcid }}</a></strong>
 </li>
 {% endif %}
 </ul>

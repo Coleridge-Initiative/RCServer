@@ -19,7 +19,12 @@ rank:
 {% if issn is not none %}
 <li>
 issn:
-<strong>{{ issn }}</strong>
+<strong>
+<a
+ href="https://portal.issn.org/resource/ISSN/{{ issn }}"
+ target="_blank"
+ tabindex="-1"
+>{{ issn }}</a></strong>
 </li>
 {% endif %}
 </ul>

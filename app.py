@@ -34,6 +34,7 @@ class RCServerApp (Flask):
     DEFAULT_CORPUS = "min_kg.jsonld"
     DEFAULT_PRECOMPUTE = False	# CLI flag - pre-compute results
     DEFAULT_PORT = 5000		# CLI arg - port used for dev/test
+    DEFAULT_SCHEME = "https"	# CLI arg - HTTP scheme for OpenAPI
     DEFAULT_TOKEN = None	# CLI arg - input TSV file for web tokens
 
     PATH_DC_CACHE = "/tmp/richcontext"	# TODO: move to flask.cfg
@@ -443,7 +444,7 @@ API_TEMPLATE = {
             "termsOfService": "https://coleridgeinitiative.org/computing"
         },
         "basePath": "/",
-        "schemes": ["http"],
+        "schemes": [ APP.DEFAULT_SCHEME ],
         "externalDocs": {
             "description": "Documentation",
             "url": "https://github.com/Coleridge-Initiative/RCServer"
@@ -456,6 +457,40 @@ SWAGGER = Swagger(APP, template=API_TEMPLATE)
 
 ######################################################################
 ## API routes
+
+@CACHE.cached(timeout=3000)
+@APP.route("/api/v1/lookup/<entity>", methods=["GET"])
+def api_lookup_entity (entity):
+    """
+    lookup metadata for a given entity
+    ---
+    tags:
+      - knowledge_graph
+    description: 'lookup metadata for a given entity'
+    parameters:
+      - name: entity
+        in: path
+        required: true
+        type: string
+        description: entity UUID
+    produces:
+      - application/json
+    responses:
+      '200':
+        description: JSON description of the entity metadata
+      '400':
+        description: bad request; is the entity UUID correct?
+    """
+    update_session()
+    response = APP.net.lookup_entity(entity)
+
+    if not response:
+        status = HTTPStatus.BAD_REQUEST.value
+    else:
+        status = HTTPStatus.OK.value
+
+    return jsonify(response), status
+
 
 @CACHE.cached(timeout=3000)
 @APP.route("/api/v1/phrases", methods=["GET"])
