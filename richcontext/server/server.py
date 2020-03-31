@@ -563,11 +563,17 @@ class RCNetwork:
         return rank
 
 
-    def render_prov (self, p):
+    def reco_prov (self, p):
         """
-        render HTML for a provider
+        recommend ordered links to this provider entity
         """
-        html = None
+        uuid = None
+        title = None
+        rank = None
+        url = None
+        ror = None
+        data_list = None
+
         p_id = self.get_id(p.view["id"])
 
         if p_id in self.scale:
@@ -586,24 +592,46 @@ class RCNetwork:
                 ror = p.view["ror"].replace("https://ror.org/", "")
                 url = p.view["ror"]
 
+            uuid = p.view["id"]
+            title = p.view["title"]
+            rank = "{:.4f}".format(impact)
+            data_list = sorted(data_list, key=lambda x: x[2], reverse=True)
+
+        return uuid, title, rank, url, ror, data_list
+
+
+    def render_prov (self, p):
+        """
+        render HTML for a provider
+        """
+        html = None
+        uuid, title, rank, url, ror, data_list = self.reco_prov(p)
+
+        if uuid:
             html = self.render_template(
                 self.prov_template, 
-                uuid=p.view["id"],
-                title=p.view["title"],
-                rank="{:.4f}".format(impact),
+                uuid=uuid,
+                title=title,
+                rank=rank,
                 url=url,
                 ror=ror,
-                data_list=sorted(data_list, key=lambda x: x[2], reverse=True)
+                data_list=data_list
                 )
 
         return html
 
 
-    def render_data (self, d):
+    def reco_data (self, d):
         """
-        render HTML for a dataset
+        recommend ordered links to this dataset entity
         """
-        html = None
+        uuid = None
+        title = None
+        rank = None
+        url = None
+        provider = None
+        publ_list = []
+
         d_id = self.get_id(d.view["id"])
 
         if d_id in self.scale:
@@ -619,24 +647,48 @@ class RCNetwork:
                     neighbor_scale, neighbor_impact = self.scale[neighbor]
                     publ_list.append([ neighbor, self.labels[neighbor], neighbor_impact ])
 
+            uuid = d.view["id"]
+            title = d.view["title"]
+            rank = "{:.4f}".format(impact)
+            url = d.view["url"]
+            provider = [p_id, self.labels[p_id]]
+            publ_list = sorted(publ_list, key=lambda x: x[2], reverse=True)
+
+        return uuid, title, rank, url, provider, publ_list
+
+
+    def render_data (self, d):
+        """
+        render HTML for a dataset
+        """
+        html = None
+        uuid, title, rank, url, provider, publ_list = self.reco_data(d)
+
+        if uuid:
             html = self.render_template(
                 self.data_template, 
-                uuid=d.view["id"],
-                title=d.view["title"],
-                rank="{:.4f}".format(impact),
-                url=d.view["url"],
-                provider=(p_id, self.labels[p_id]),
-                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
+                uuid=uuid,
+                title=title,
+                rank=rank,
+                url=url,
+                provider=provider,
+                publ_list=publ_list
                 )
 
         return html
 
 
-    def render_auth (self, a, rerank=False):
+    def reco_auth (self, a, rerank):
         """
-        render HTML for an author
+        recommend ordered links to this author entity
         """
-        html = None
+        uuid = None
+        title = None
+        rank = None
+        url = None
+        orcid = None
+        publ_list = None
+
         a_id = self.get_id(a.view["id"])
 
         if a_id in self.scale:
@@ -655,24 +707,46 @@ class RCNetwork:
                 orcid = a.view["orcid"].replace("https://orcid.org/", "")
                 url = a.view["orcid"]
 
+            uuid = a.view["id"]
+            title = a.view["title"]
+            rank = "{:.4f}".format(impact)
+            publ_list = sorted(publ_list, key=lambda x: x[2], reverse=True)
+
+        return uuid, title, rank, url, orcid, publ_list
+
+
+    def render_auth (self, a, rerank=False):
+        """
+        render HTML for an author
+        """
+        html = None
+        uuid, title, rank, url, orcid, publ_list = self.reco_auth(a, rerank)
+
+        if uuid:
             html = self.render_template(
                 self.auth_template, 
-                uuid=a.view["id"],
-                title=a.view["title"],
-                rank="{:.4f}".format(impact),
+                uuid=uuid,
+                title=title,
+                rank=rank,
                 url=url,
                 orcid=orcid,
-                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
+                publ_list=publ_list
                 )
 
         return html
 
 
-    def render_jour (self, j):
+    def reco_jour (self, j):
         """
-        render HTML for a journal
+        recommend ordered links to this journal entity
         """
-        html = None
+        uuid = None
+        title = None
+        rank = None
+        url = None
+        issn = None
+        publ_list = None
+
         j_id = self.get_id(j.view["id"])
 
         if j_id in self.scale:
@@ -696,24 +770,44 @@ class RCNetwork:
             else:
                 url = None
 
+            uuid = j.view["id"]
+            title = j.view["title"]
+            rank = "{:.4f}".format(impact)
+            publ_list = sorted(publ_list, key=lambda x: x[2], reverse=True)
+
+        return uuid, title, rank, url, issn, publ_list
+
+
+    def render_jour (self, j):
+        """
+        render HTML for a journal
+        """
+        html = None
+        uuid, title, rank, url, issn, publ_list = self.reco_jour(j)
+
+        if uuid:
             html = self.render_template(
                 self.jour_template, 
-                uuid=j.view["id"],
-                title=j.view["title"],
-                rank="{:.4f}".format(impact),
+                uuid=uuid,
+                title=title,
+                rank=rank,
                 url=url,
                 issn=issn,
-                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
+                publ_list=publ_list
                 )
 
         return html
 
 
-    def render_topi (self, t):
+    def reco_topi (self, t):
         """
-        render HTML for a topic
+        recommend ordered links to this topic entity
         """
-        html = None
+        uuid = None
+        title = None
+        rank = None
+        publ_list = None
+
         t_id = self.get_id(t.view["id"])
 
         if t_id in self.scale:
@@ -725,22 +819,49 @@ class RCNetwork:
                 neighbor_scale, neighbor_impact = self.scale[neighbor]
                 publ_list.append([ neighbor, self.labels[neighbor], neighbor_scale ])
 
+            uuid = t.view["id"]
+            title = t.view["title"]
+            rank = "{:.4f}".format(impact)
+            publ_list = sorted(publ_list, key=lambda x: x[2], reverse=True)
+
+        return uuid, title, rank, publ_list
+
+
+    def render_topi (self, t):
+        """
+        render HTML for a topic
+        """
+        html = None
+        uuid, title, rank, publ_list = self.reco_topi(t)
+
+        if uuid:
             html = self.render_template(
                 self.topi_template, 
-                uuid=t.view["id"],
-                title=t.view["title"],
-                rank="{:.4f}".format(impact),
-                publ_list=sorted(publ_list, key=lambda x: x[2], reverse=True)
+                uuid=uuid,
+                title=title,
+                rank=rank,
+                publ_list=publ_list
                 )
 
         return html
 
 
-    def render_publ (self, p):
+    def reco_publ (self, p):
         """
-        render HTML for a publication
+        recommend ordered links to this publication entity
         """
-        html = None
+        uuid = None
+        title = None
+        rank = None
+        url = None
+        doi = None
+        pdf = None
+        journal = None
+        abstract = None
+        auth_list = None
+        data_list = None
+        topi_list = None
+
         p_id = self.get_id(p.view["id"])
 
         if p_id in self.scale:
@@ -786,22 +907,125 @@ class RCNetwork:
             else:
                 abstract = p.view["abstract"]
 
+            uuid = p.view["id"]
+            title = p.view["title"]
+            rank = "{:.4f}".format(impact)
+            pdf = p.view["pdf"]
+            data_list = sorted(data_list, key=lambda x: x[2], reverse=True)
+            topi_list = sorted(topi_list, key=lambda x: x[2], reverse=True)
+
+        return uuid, title, rank, url, doi, pdf, journal, abstract, auth_list, data_list, topi_list
+
+
+    def render_publ (self, p):
+        """
+        render HTML for a publication
+        """
+        html = None
+        uuid, title, rank, url, doi, pdf, journal, abstract, auth_list, data_list, topi_list = self.reco_publ(p)
+
+        if uuid:
             html = self.render_template(
                 self.publ_template, 
-                uuid=p.view["id"],
-                title=p.view["title"],
-                rank="{:.4f}".format(impact),
+                uuid=uuid,
+                title=title,
+                rank=rank,
                 url=url,
                 doi=doi,
-                pdf=p.view["pdf"],
+                pdf=pdf,
                 journal=journal,
                 abstract=abstract,
                 auth_list=auth_list,
-                data_list=sorted(data_list, key=lambda x: x[2], reverse=True),
-                topi_list=sorted(topi_list, key=lambda x: x[2], reverse=True)
+                data_list=data_list,
+                topi_list=topi_list
                 )
 
         return html
+
+
+    def remap_list (self, l):
+        """
+        remap the networkx graph index values to UUIDs
+        """
+        return [ [self.id_list[x[0]], x[1]] for x in l ]
+
+
+    def lookup_entity (self, uuid):
+        """
+        get recommended links for the given entity
+        """
+        response = None
+
+        if uuid in self.prov:
+            uuid, title, rank, url, ror, data_list = self.reco_prov(self.prov[uuid])
+
+            response = {
+                "title": title,
+                "rank": rank,
+                "url": url,
+                "ror": ror,
+                "data": self.remap_list(data_list)
+                }
+
+        elif uuid in self.data:
+            uuid, title, rank, url, provider, publ_list = self.reco_data(self.data[uuid])
+
+            response = {
+                "title": title,
+                "rank": rank,
+                "url": url,
+                "prov": [ self.id_list[provider[0]], provider[1] ],
+                "publ": self.remap_list(publ_list)
+                }
+
+        elif uuid in self.publ:
+            uuid, title, rank, url, doi, pdf, journal, abstract, auth_list, data_list, topi_list = self.reco_publ(self.publ[uuid])
+
+            response = {
+                "title": title,
+                "rank": rank,
+                "url": url,
+                "doi": doi,
+                "pdf": pdf,
+                "abstract": abstract,
+                "jour": [ self.id_list[journal[0]], journal[1] ],
+                "auth": self.remap_list(auth_list),
+                "data": self.remap_list(data_list),
+                "topi": self.remap_list(topi_list)
+                }
+
+        elif uuid in self.auth:
+            uuid, title, rank, url, orcid, publ_list = self.reco_auth(self.auth[uuid], rerank=False)
+
+            response = {
+                "title": title,
+                "rank": rank,
+                "url": url,
+                "orcid": orcid,
+                "publ": self.remap_list(publ_list)
+                }
+
+        elif uuid in self.jour:
+            uuid, title, rank, url, issn, publ_list = self.reco_jour(self.jour[uuid])
+
+            response = {
+                "title": title,
+                "rank": rank,
+                "url": url,
+                "issn": issn,
+                "publ": self.remap_list(publ_list)
+                }
+
+        elif uuid in self.topi:
+            uuid, title, rank, publ_list = self.reco_topi(self.topi[uuid])
+
+            response = {
+                "title": title,
+                "rank": rank,
+                "publ": self.remap_list(publ_list)
+                }
+
+        return response
 
 
     def render_links (self):

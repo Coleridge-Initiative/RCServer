@@ -19,7 +19,12 @@ rank:
 {% if ror is not none %}
 <li>
 ror:
-<strong>{{ ror }}</strong>
+<strong>
+<a
+ href="https://ror.org/{{ ror }}"
+ target="_blank"
+ tabindex="-1"
+>{{ ror }}</a></strong>
 </li>
 {% endif %}
 </ul>
