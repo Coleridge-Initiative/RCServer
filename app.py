@@ -444,7 +444,7 @@ API_TEMPLATE = {
             "termsOfService": "https://coleridgeinitiative.org/computing"
         },
         "basePath": "/",
-        "schemes": [ APP.DEFAULT_SCHEME ],
+        "schemes": [ APP.DEFAULT_SCHEME, "http" ],
         "externalDocs": {
             "description": "Documentation",
             "url": "https://github.com/Coleridge-Initiative/RCServer"
