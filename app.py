@@ -499,7 +499,7 @@ def api_entity_phrases ():
     get the list of entity phrases for autocompletion
     ---
     tags:
-      - knowledge_graph
+      - web_app
     description: 'get the entity phrases used for autocompletion'
     produces:
       - application/json
@@ -519,7 +519,7 @@ def api_entity_query (radius, entity):
     query a subgraph for an entity
     ---
     tags:
-      - knowledge_graph
+      - web_app
     description: 'query with a radius near an entity, using BFS'
     parameters:
       - name: radius
@@ -550,7 +550,7 @@ def api_entity_links (index):
     lookup the links for an entity
     ---
     tags:
-      - knowledge_graph
+      - web_app
     description: 'lookup the links for an entity'
     parameters:
       - name: index
