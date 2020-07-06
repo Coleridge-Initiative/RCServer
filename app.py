@@ -6,6 +6,7 @@ from flask import Flask, g, \
     jsonify, make_response, redirect, render_template, render_template_string, \
     request, safe_join, send_file, send_from_directory, session, url_for
 from flask_caching import Cache
+from flask_cors import CORS
 from http import HTTPStatus
 from pathlib import Path
 from richcontext import server as rc_server
@@ -317,6 +318,8 @@ class RCServerApp (Flask):
 
 APP = RCServerApp(__name__)
 CACHE = Cache(APP, config={"CACHE_TYPE": "simple"})
+CORS(APP)
+
 
 
 ######################################################################
