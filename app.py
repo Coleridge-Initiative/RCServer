@@ -201,14 +201,14 @@ class RCServerApp (Flask):
             if "used" in entity.view:
                 response.append({
                         "text": entity.view["title"],
-                        "kind": "provider"
+                        "kind": "dataset"
                         })
 
         for id, entity in self.net.jour.items():
             if "used" in entity.view:
                 response.append({
                         "text": entity.view["title"],
-                        "kind": "provider"
+                        "kind": "journal"
                         })
 
         return response, status
